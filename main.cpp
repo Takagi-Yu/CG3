@@ -1,5 +1,9 @@
 #include <Windows.h>
+#include <chrono>
 #include <cstdint>
+#include <filesystem>
+#include <format>
+#include <fstream>
 #include <string>
 
 std::wstring ConvertString(const std::string &str) {
@@ -36,8 +40,13 @@ std::string ConvertString(const std::wstring &str) {
   return result;
 }
 
-void Log(const std::string& message) { 
-    OutputDebugStringA(message.c_str()); 
+/*void Log(const std::string &message) {
+    OutputDebugStringA(message.c_str());
+}*/
+
+void Log(std::ostream &os, const std::string &message) {
+  os << message << std::endl;
+  OutputDebugStringA(message.c_str());
 }
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
@@ -51,7 +60,22 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 }
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
-  WNDCLASS wc {};
+  std::filesystem::create_directory("logs");
+
+  std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+
+  std::chrono::time_point<std::chrono::system_clock, std::chrono::seconds>
+      nowSeconds = std::chrono::time_point_cast<std::chrono::seconds>(now);
+
+  std::chrono::zoned_time localtime{std::chrono::current_zone(), nowSeconds};
+
+  std::string dateString = std::format("{:%Y%m%d_%H%M%S}", localtime);
+
+  std::string logFilePath = std::string("logs/") + dateString + ".log";
+
+  std::ofstream logStream(logFilePath);
+
+  WNDCLASS wc{};
   wc.lpfnWndProc = WindowProc;
   wc.lpszClassName = L"CG2WindowClass";
   wc.hInstance = GetModuleHandle(nullptr);
@@ -79,11 +103,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       TranslateMessage(&msg);
       DispatchMessage(&msg);
     } else {
-    
+
     }
   }
 
-  Log("Hello,DirectX!\n");
+  Log(logStream, "Hello,DirectX!\n");
+  Log(logStream, ConvertString(std::format(L"clientSize:{},{}\n", kClientWidth,
+                                           kClientheight)));
 
   return 0;
 }
