@@ -233,12 +233,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // コマンドリストの生成がうまくいかなかったので起動できない
   assert(SUCCEEDED(hr));
 
-
-
-
-
-
-
+  // スワップチェーンを生成する
+  IDXGISwapChain4 *swapChain = nullptr;
+  DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
+  swapChainDesc.Width = kClientWidth;
+  swapChainDesc.Height = kClientheight;
+  swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+  swapChainDesc.SampleDesc.Count = 1;
+  swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+  swapChainDesc.BufferCount = 2;
+  swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+  // コマンドキュー、ウィンドウハンドル、設定を渡して生成する
+  hr = dxgiFactory->CreateSwapChainForHwnd(
+      commandQueue, hwnd, &swapChainDesc, nullptr, nullptr,
+      reinterpret_cast<IDXGISwapChain1 **>(&swapChain));
+  assert(SUCCEEDED(hr));
 
 
 
