@@ -1,4 +1,4 @@
-#include <Windows.h>
+ï»¿#include <Windows.h>
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
@@ -8,9 +8,35 @@
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <cassert>
+#include <DbgHelp.h>
+#include <strsafe.h>
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "Dbghelp.lib")
+
+static LONG WINAPI ExportDump(EXCEPTION_POINTERS *exception) {
+  SYSTEMTIME time;
+  GetLocalTime(&time);
+  wchar_t filePath[MAX_PATH] = {0};
+  CreateDirectory(L"./Dumps", nullptr);
+  StringCchPrintfW(filePath, MAX_PATH, L"./Dumps/%04d-%02d%02d.dmp", time.wYear,
+                   time.wMonth, time.wDay, time.wHour, time.wMinute);
+  HANDLE dumpFileHandle =
+      CreateFile(filePath, GENERIC_READ | GENERIC_WRITE,
+                 FILE_SHARE_WRITE | FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
+  DWORD processId = GetCurrentProcessId();
+  DWORD threadId = GetCurrentThreadId();
+  MINIDUMP_EXCEPTION_INFORMATION maindumpInformation{0};
+  maindumpInformation.ThreadId = threadId;
+  maindumpInformation.ExceptionPointers = exception;
+  maindumpInformation.ClientPointers = TRUE;
+
+  MiniDumpWriteDump(GetCurrentProcess(), processId, dumpFileHandle,
+                    MiniDumpNormal, &maindumpInformation, nullptr, nullptr);
+  
+  return EXCEPTION_EXECUTE_HANDLER;
+}
 
 std::wstring ConvertString(const std::string &str) {
   if (str.empty()) {
@@ -55,21 +81,29 @@ void Log(std::ostream &os, const std::string &message) {
   OutputDebugStringA(message.c_str());
 }
 
-//ƒEƒBƒ“ƒhƒEƒvƒƒV[ƒWƒƒ
+//ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ãƒ—ãƒ­ã‚·ãƒ¼ã‚¸ãƒ£
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-    //ƒƒbƒZ[ƒW‚É‰‚¶‚ÄƒQ[ƒ€ŒÅ—L‚Ìˆ—‚ğs‚¤
+    //ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã«å¿œã˜ã¦ã‚²ãƒ¼ãƒ å›ºæœ‰ã®å‡¦ç†ã‚’è¡Œã†
     switch (msg) {
-        //ƒEƒBƒ“ƒhƒE‚ª”jŠü‚³‚ê‚½
+        //ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ãŒç ´æ£„ã•ã‚ŒãŸ
   case WM_DESTROY:
-      //OS‚É‘Î‚µ‚ÄAƒAƒvƒŠ‚ÌI—¹‚ğ“`‚¦‚é
+      //OSã«å¯¾ã—ã¦ã€ã‚¢ãƒ—ãƒªã®çµ‚äº†ã‚’ä¼ãˆã‚‹
     PostQuitMessage(0);
     return 0;
   }
-    //•W€‚ÌƒƒbƒZ[ƒWˆ—‚ğs‚¤
+    //æ¨™æº–ã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸å‡¦ç†ã‚’è¡Œã†
   return DefWindowProc(hwnd, msg, wparam, lparam);
 }
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+
+  // èª°ã‚‚æ•æ‰ã—ãªã‹ã£ãŸå ´åˆã«(Unhedled),è£œè¶³ã™ã‚‹é–¢æ•°ã‚’ç™»éŒ²
+  // mainé–¢æ•°å§‹ã¾ã£ã¦ã™ãã«ç™»éŒ²ã™ã‚‹ã¨è‰¯ã„
+  SetUnhandledExceptionFilter(ExportDump);
+
+  /*uint32_t *p = nullptr;
+  *p = 100;*/ 
+
   std::filesystem::create_directory("logs");
 
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
@@ -86,109 +120,117 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   std::ofstream logStream(logFilePath);
 
   WNDCLASS wc{};
-  //ƒEƒBƒ“ƒhƒEƒvƒƒV[ƒWƒƒ
+  //ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ãƒ—ãƒ­ã‚·ãƒ¼ã‚¸ãƒ£
   wc.lpfnWndProc = WindowProc;
-  //‚¤ƒEƒBƒ“ƒhƒEƒNƒ‰ƒX–¼
+  //ã†ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚¯ãƒ©ã‚¹å
   wc.lpszClassName = L"CG2WindowClass";
-  //ƒCƒ“ƒXƒ^ƒ“ƒXƒnƒ“ƒhƒ‹
+  //ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ãƒãƒ³ãƒ‰ãƒ«
   wc.hInstance = GetModuleHandle(nullptr);
-  //ƒJ[ƒ\ƒ‹
+  //ã‚«ãƒ¼ã‚½ãƒ«
   wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
 
-  //ƒEƒBƒ“ƒhƒEƒNƒ‰ƒX‚ğ“o˜^‚·‚é
+  //ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚¯ãƒ©ã‚¹ã‚’ç™»éŒ²ã™ã‚‹
   RegisterClass(&wc);
 
-  //ƒNƒ‰ƒCƒAƒ“ƒg—Ìˆæ‚ÌƒTƒCƒY
+  //ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆé ˜åŸŸã®ã‚µã‚¤ã‚º
   const int32_t kClientWidth = 1280;
   const int32_t kClientheight = 720;
 
-  //ƒEƒBƒ“ƒhƒEƒTƒCƒY‚ğ•\‚·\‘¢‘Ì‚ÉƒNƒ‰ƒCƒAƒ“ƒg—Ìˆæ‚ğ“ü‚ê‚é
+  //ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚µã‚¤ã‚ºã‚’è¡¨ã™æ§‹é€ ä½“ã«ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆé ˜åŸŸã‚’å…¥ã‚Œã‚‹
   RECT wrc = {0, 0, kClientWidth, kClientheight};
 
-  //ƒNƒ‰ƒCƒAƒ“ƒg—Ìˆæ‚ğŒ³‚ÉÀÛ‚ÌƒTƒCƒY‚Éwrc‚É•ÏX‚µ‚Ä‚à‚ç‚¤
+  //ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆé ˜åŸŸã‚’å…ƒã«å®Ÿéš›ã®ã‚µã‚¤ã‚ºã«wrcã«å¤‰æ›´ã—ã¦ã‚‚ã‚‰ã†
   AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
 
-  //ƒEƒBƒ“ƒhƒE‚Ì¶¬
+  //ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®ç”Ÿæˆ
   HWND hwnd = CreateWindow(
-      wc.lpszClassName,     //—˜—p‚·‚éƒNƒ‰ƒX
-      L"CG2",               //ƒ^ƒCƒgƒ‹ƒo[‚Ì•¶š
-      WS_OVERLAPPEDWINDOW,  //‚æ‚­Œ©‚éƒEƒBƒ“ƒhƒEƒXƒ^ƒCƒ‹
-      CW_USEDEFAULT,        //•\¦XÀ•W(Windows‚É”C‚¹‚é)
-      CW_USEDEFAULT,        //•\¦YÀ•W(WindowOS‚É”C‚¹‚é)
-      wrc.right - wrc.left, //ƒEƒBƒ“ƒhƒE‰¡•
-      wrc.bottom - wrc.top, //ƒEƒBƒ“ƒhƒEc•
-      nullptr,              //eƒEƒBƒ“ƒhƒEƒnƒ“ƒhƒ‹
-      nullptr,              //ƒƒjƒ…[ƒnƒ“ƒhƒ‹
-      wc.hInstance,         //ƒCƒ“ƒXƒ^ƒ“ƒXƒnƒ“ƒhƒ‹
-      nullptr);             //ƒIƒvƒVƒ‡ƒ“
+      wc.lpszClassName,     //åˆ©ç”¨ã™ã‚‹ã‚¯ãƒ©ã‚¹
+      L"CG2",               //ã‚¿ã‚¤ãƒˆãƒ«ãƒãƒ¼ã®æ–‡å­—
+      WS_OVERLAPPEDWINDOW,  //ã‚ˆãè¦‹ã‚‹ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚¹ã‚¿ã‚¤ãƒ«
+      CW_USEDEFAULT,        //è¡¨ç¤ºXåº§æ¨™(Windowsã«ä»»ã›ã‚‹)
+      CW_USEDEFAULT,        //è¡¨ç¤ºYåº§æ¨™(WindowOSã«ä»»ã›ã‚‹)
+      wrc.right - wrc.left, //ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦æ¨ªå¹…
+      wrc.bottom - wrc.top, //ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ç¸¦å¹…
+      nullptr,              //è¦ªã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ãƒãƒ³ãƒ‰ãƒ«
+      nullptr,              //ãƒ¡ãƒ‹ãƒ¥ãƒ¼ãƒãƒ³ãƒ‰ãƒ«
+      wc.hInstance,         //ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ãƒãƒ³ãƒ‰ãƒ«
+      nullptr);             //ã‚ªãƒ—ã‚·ãƒ§ãƒ³
 
-  //ƒEƒBƒ“ƒhƒE‚ğ•\¦‚·‚é
+  //ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚’è¡¨ç¤ºã™ã‚‹
   ShowWindow(hwnd, SW_SHOW);
 
-  //DXGIƒtƒ@ƒNƒgƒŠ[‚Ì¶¬
+  //DXGIãƒ•ã‚¡ã‚¯ãƒˆãƒªãƒ¼ã®ç”Ÿæˆ
   IDXGIFactory7* dxgiFactory=nullptr;
-  //HRESULT‚ÍWindowsŒnƒGƒ‰[ƒR[ƒh‚Å‚ ‚èA
-  //ŠÖ”‚ª¬Œ÷‚µ‚½‚©‚Ç‚¤‚©‚ğSUCCEEDEDƒ}ƒNƒ‚Å”»’è‚Å‚«‚é
+  //HRESULTã¯Windowsç³»ã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰ã§ã‚ã‚Šã€
+  //é–¢æ•°ãŒæˆåŠŸã—ãŸã‹ã©ã†ã‹ã‚’SUCCEEDEDãƒã‚¯ãƒ­ã§åˆ¤å®šã§ãã‚‹
   HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
-  //‰Šú‰»‚Ìª–{“I‚È•”•ª‚ÅƒGƒ‰[‚ªo‚½ê‡‚ÍƒvƒƒOƒ‰ƒ€‚ªŠÔˆá‚Á‚Ä‚¢‚é‚©
-  //‚Ç‚¤‚É‚à‚Å‚«‚È‚¢ê‡‚ª‘½‚¢‚Ì‚Åassert‚É‚µ‚Ä‚¨‚­
+  //åˆæœŸåŒ–ã®æ ¹æœ¬çš„ãªéƒ¨åˆ†ã§ã‚¨ãƒ©ãƒ¼ãŒå‡ºãŸå ´åˆã¯ãƒ—ãƒ­ã‚°ãƒ©ãƒ ãŒé–“é•ã£ã¦ã„ã‚‹ã‹
+  //ã©ã†ã«ã‚‚ã§ããªã„å ´åˆãŒå¤šã„ã®ã§assertã«ã—ã¦ãŠã
   assert(SUCCEEDED(hr));
   
-  //g—p‚·‚éƒAƒ_ƒvƒ^—p‚Ì•Ï”BÅ‰‚Énullptr‚ğ“ü‚ê‚Ä‚¨‚­
+  //ä½¿ç”¨ã™ã‚‹ã‚¢ãƒ€ãƒ—ã‚¿ç”¨ã®å¤‰æ•°ã€‚æœ€åˆã«nullptrã‚’å…¥ã‚Œã¦ãŠã
   IDXGIAdapter4 *useAdapter = nullptr;
 
-  //—Ç‚¢‡‚ÉƒAƒ_ƒvƒ^‚ğ—Š‚Ş
+  //è‰¯ã„é †ã«ã‚¢ãƒ€ãƒ—ã‚¿ã‚’é ¼ã‚€
   for (UINT i = 0; dxgiFactory->EnumAdapterByGpuPreference(
                        i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
                        IID_PPV_ARGS(&useAdapter)) != DXGI_ERROR_NOT_FOUND;
        ++i) {
-      //ƒAƒ_ƒvƒ^[‚Ìî•ñ‚ğæ“¾‚·‚é
+      //ã‚¢ãƒ€ãƒ—ã‚¿ãƒ¼ã®æƒ…å ±ã‚’å–å¾—ã™ã‚‹
     DXGI_ADAPTER_DESC3 adapterDesc{};
     hr = useAdapter->GetDesc3(&adapterDesc);
-    assert(SUCCEEDED(hr)); //æ“¾‚Å‚«‚È‚¢‚Ì‚Íˆê‘å–
-    //ƒ\ƒtƒgƒEƒFƒAƒAƒ_ƒvƒ^o‚È‚¯‚ê‚ÎÌ—p!
+    assert(SUCCEEDED(hr)); //å–å¾—ã§ããªã„ã®ã¯ä¸€å¤§äº‹
+    //ã‚½ãƒ•ãƒˆã‚¦ã‚§ã‚¢ã‚¢ãƒ€ãƒ—ã‚¿å‡ºãªã‘ã‚Œã°æ¡ç”¨!
     if (!(adapterDesc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE)) {
-      //Ì—p‚µ‚½ƒAƒ_ƒvƒ^‚Ìî•ñ‚ğƒƒO‚Éo—ÍBwstring‚Ì•û‚È‚Ì‚Å’ˆÓ
+      //æ¡ç”¨ã—ãŸã‚¢ãƒ€ãƒ—ã‚¿ã®æƒ…å ±ã‚’ãƒ­ã‚°ã«å‡ºåŠ›ã€‚wstringã®æ–¹ãªã®ã§æ³¨æ„
       Log(logStream,ConvertString(std::format(L"Use Adapter:{}\n", adapterDesc.Description)));
       break;
     }
-    useAdapter = nullptr; //ƒ\ƒtƒgƒEƒFƒAƒAƒ_ƒvƒ^‚Ìê‡‚ÍŒ©‚È‚©‚Á‚½‚±‚Æ‚É‚·‚é
+    useAdapter = nullptr; //ã‚½ãƒ•ãƒˆã‚¦ã‚§ã‚¢ã‚¢ãƒ€ãƒ—ã‚¿ã®å ´åˆã¯è¦‹ãªã‹ã£ãŸã“ã¨ã«ã™ã‚‹
   }
-  //“KØ‚ÈƒAƒ_ƒvƒ^‚ªŒ©‚Â‚©‚ç‚È‚Á‚©‚Á‚½‚Ì‚Å‹N“®‚Å‚«‚È‚¢
+  //é©åˆ‡ãªã‚¢ãƒ€ãƒ—ã‚¿ãŒè¦‹ã¤ã‹ã‚‰ãªã£ã‹ã£ãŸã®ã§èµ·å‹•ã§ããªã„
   assert(useAdapter != nullptr);
 
   ID3D12Device *device = nullptr;
-  //‹@”\ƒŒƒxƒ‹‚ÆƒƒOo—Í—p‚Ì•¶š—ñ
+  //æ©Ÿèƒ½ãƒ¬ãƒ™ãƒ«ã¨ãƒ­ã‚°å‡ºåŠ›ç”¨ã®æ–‡å­—åˆ—
   D3D_FEATURE_LEVEL featureLevels[] = {
       D3D_FEATURE_LEVEL_12_2, D3D_FEATURE_LEVEL_12_1, D3D_FEATURE_LEVEL_12_0};
 
   const char *featureLevelStrings[] = {"12.2", "12.1", "12.0"};
-  //‚‚¢‡‚É¶¬‚Å‚«‚é‚©‚µ‚Ä‚¢‚­
+  //é«˜ã„é †ã«ç”Ÿæˆã§ãã‚‹ã‹è©¦ã—ã¦ã„ã
   for (size_t i = 0; i < _countof(featureLevels); ++i) {
-    //Ì—p‚µ‚½ƒAƒ_ƒvƒ^[‚ÅƒfƒoƒCƒX‚ğ¶¬
+    //æ¡ç”¨ã—ãŸã‚¢ãƒ€ãƒ—ã‚¿ãƒ¼ã§ãƒ‡ãƒã‚¤ã‚¹ã‚’ç”Ÿæˆ
     hr = D3D12CreateDevice(useAdapter, featureLevels[i], IID_PPV_ARGS(&device));
-    //w’è‚µ‚½‹@”\ƒŒƒxƒ‹‚ÅƒfƒoƒCƒX‚ª¶¬‚Å‚«‚½‚©‚ğŠm”F
+    //æŒ‡å®šã—ãŸæ©Ÿèƒ½ãƒ¬ãƒ™ãƒ«ã§ãƒ‡ãƒã‚¤ã‚¹ãŒç”Ÿæˆã§ããŸã‹ã‚’ç¢ºèª
     if (SUCCEEDED(hr)) {
-      //¶¬‚Å‚«‚½‚Ì‚ÅƒƒOo—Í‚ğs‚Á‚Äƒ‹[ƒv‚ğ”²‚¯‚é
+      //ç”Ÿæˆã§ããŸã®ã§ãƒ­ã‚°å‡ºåŠ›ã‚’è¡Œã£ã¦ãƒ«ãƒ¼ãƒ—ã‚’æŠœã‘ã‚‹
       Log(logStream, std::format("FeatureLevel : {}\n",
                                                featureLevelStrings[i]));
       break;
     }
   }
-  //ƒfƒoƒCƒX‚Ì¶¬‚ª‚¤‚Ü‚­‚¢‚©‚È‚©‚Á‚½‚Ì‚Å‹N“®‚Å‚«‚È‚¢
+  //ãƒ‡ãƒã‚¤ã‚¹ã®ç”ŸæˆãŒã†ã¾ãã„ã‹ãªã‹ã£ãŸã®ã§èµ·å‹•ã§ããªã„
   assert(device !=nullptr);
   Log(logStream, "Complete create D3D12Device!!!\n");
 
+  // ã‚³ãƒãƒ³ãƒ‰ã‚­ãƒ¥ãƒ¼ã‚’ç”Ÿæˆã™ã‚‹
+  ID3D12CommandQueue *commandQueue = nullptr;
+  D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
+  hr = device->CreateCommandQueue(&commandQueueDesc,
+                                  IID_PPV_ARGS(&commandQueue));
+  // ã‚³ãƒãƒ³ãƒ‰ã‚­ãƒ¥ãƒ¼ã®ç”ŸæˆãŒã†ã¾ãã„ã‹ãªã‹ã£ãŸã®ã§èµ·å‹•ã§ããªã„
+  assert(SUCCEEDED(hr));
+
 
   MSG msg{};
-  //ƒEƒBƒ“ƒhƒE‚Ì~ƒ{ƒ^ƒ“‚ª‰Ÿ‚³‚ê‚é‚Ü‚Åƒ‹[ƒv
+  //ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®Ã—ãƒœã‚¿ãƒ³ãŒæŠ¼ã•ã‚Œã‚‹ã¾ã§ãƒ«ãƒ¼ãƒ—
   while (msg.message != WM_QUIT) {
-      //Window‚ÉƒƒbƒZ[ƒW‚ª—ˆ‚Ä‚½‚çÅ—Dæ‚Åˆ—‚³‚¹‚é
+      //Windowã«ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãŒæ¥ã¦ãŸã‚‰æœ€å„ªå…ˆã§å‡¦ç†ã•ã›ã‚‹
     if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
       TranslateMessage(&msg);
       DispatchMessage(&msg);
     } else {
-        //ƒQ[ƒ€‚Ìˆ—
+        //ã‚²ãƒ¼ãƒ ã®å‡¦ç†
     }
   }
 
