@@ -16,6 +16,7 @@
 #pragma comment(lib, "Dbghelp.lib")
 
 static LONG WINAPI ExportDump(EXCEPTION_POINTERS *exception) {
+  // 時刻を取得して、時刻を名前に入れたファイルを作成。Dumpディレクトリ以下に出力
   SYSTEMTIME time;
   GetLocalTime(&time);
   wchar_t filePath[MAX_PATH] = {0};
@@ -25,16 +26,18 @@ static LONG WINAPI ExportDump(EXCEPTION_POINTERS *exception) {
   HANDLE dumpFileHandle =
       CreateFile(filePath, GENERIC_READ | GENERIC_WRITE,
                  FILE_SHARE_WRITE | FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
+  // processID(このexeのID)とクラッシュ(例外)の発生したthreadIDを取得
   DWORD processId = GetCurrentProcessId();
   DWORD threadId = GetCurrentThreadId();
+  // 設定情報を入力
   MINIDUMP_EXCEPTION_INFORMATION maindumpInformation{0};
   maindumpInformation.ThreadId = threadId;
   maindumpInformation.ExceptionPointers = exception;
   maindumpInformation.ClientPointers = TRUE;
-
+  // Dumpを出力。MiniDumpNomalは最低限の情報を出力するフラグ
   MiniDumpWriteDump(GetCurrentProcess(), processId, dumpFileHandle,
                     MiniDumpNormal, &maindumpInformation, nullptr, nullptr);
-  
+  // ほかに関連付けられているSEH例外ハンドラがあれば実行。通常はプロセスする
   return EXCEPTION_EXECUTE_HANDLER;
 }
 
@@ -191,6 +194,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   //適切なアダプタが見つからなっかったので起動できない
   assert(useAdapter != nullptr);
 
+  #ifdef _DEBUG
+  ID3D12Debug1 *debugController = nullptr;
+  if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)))) {
+    // デバッグレイヤーを有効化する
+    debugController->EnableDebugLayer();
+    // さらにGPU側でもチェックを行うようにする
+    debugController->SetEnableGPUBasedValidation(TRUE);
+  }
+  #endif
+
   ID3D12Device *device = nullptr;
   //機能レベルとログ出力用の文字列
   D3D_FEATURE_LEVEL featureLevels[] = {
@@ -212,6 +225,32 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   //デバイスの生成がうまくいかなかったので起動できない
   assert(device !=nullptr);
   Log(logStream, "Complete create D3D12Device!!!\n");
+
+  #ifdef _DEBUG
+  ID3D12InfoQueue *infoQueue = nullptr;
+  if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(&infoQueue)))) {
+    // やばいエラー時に止まる
+    infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
+    // エラー時に止まる
+    infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+    // 警告時に止まる
+    infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
+    // 抑制するメッセージのID
+    D3D12_MESSAGE_ID denyIds[] = {
+        // Windows11でのDXGIデバッグレイヤーの相互作用バグによるエラーメッセージ
+        D3D12_MESSAGE_ID_RESOURCE_BARRIER_MISMATCHING_COMMAND_LIST_TYPE
+    };
+    D3D12_MESSAGE_SEVERITY severities[] = {D3D12_MESSAGE_SEVERITY_INFO};
+    D3D12_INFO_QUEUE_FILTER filter{};
+    filter.DenyList.NumIDs = _countof(denyIds);
+    filter.DenyList.pIDList = denyIds;
+    filter.DenyList.NumSeverities = _countof(severities);
+    filter.DenyList.pSeverityList = severities;
+    infoQueue->PushStorageFilter(&filter);
+    // 解放
+    infoQueue->Release();
+  }
+  #endif
 
   // コマンドキューを生成する
   ID3D12CommandQueue *commandQueue = nullptr;
@@ -325,7 +364,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
   Log(logStream, "Hello,DirectX!\n");
   Log(logStream, ConvertString(std::format(L"clientSize:{},{}\n", kClientWidth,
-                                           kClientheight)));
+                  kClientheight)));
 
   return 0;
 }
