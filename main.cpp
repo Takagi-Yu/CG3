@@ -11,11 +11,13 @@
 #include <DbgHelp.h>
 #include <strsafe.h>
 #include <dxgidebug.h>
+#include <dxcapi.h>
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "Dbghelp.lib")
 #pragma comment(lib, "dxguid.lib")
+#pragma comment(lib, "dxcompiler.lib")
 
 static LONG WINAPI ExportDump(EXCEPTION_POINTERS *exception) {
   // 時刻を取得して、時刻を名前に入れたファイルを作成。Dumpディレクトリ以下に出力
@@ -98,6 +100,17 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
   }
     //標準のメッセージ処理を行う
   return DefWindowProc(hwnd, msg, wparam, lparam);
+}
+
+IDxcBlob* CompileShader(
+    const std::wstring& filePath, // CompilerするShaderファイルへのパス
+    const wchar_t* profile, // Compilerに使用するProfile
+    IDxcUtils* dxcUtils, // 初期化で生成したものを3つ
+    IDxcCompiler3* dxcCompiler,
+    IDxcIncludeHandler* includeHandler) {
+
+
+
 }
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -340,6 +353,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   HANDLE fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
   assert(fenceEvent != nullptr);
 
+  // dxcCompilerを初期化
+  IDxcUtils *dxcUtils = nullptr;
+  IDxcCompiler3 *dxcCompiler = nullptr;
+  hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils));
+  assert(SUCCEEDED(hr));
+  hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&dxcCompiler));
+  assert(SUCCEEDED(hr));
+
+  //現時点でincludeはしないが、includeに対応するための設定を行っておく
+  IDxcIncludeHandler *includeHandler = nullptr;
+  hr = dxcUtils->CreateDefaultIncludeHandler(&includeHandler);
+  assert(SUCCEEDED(hr));
+
   MSG msg{};
   // ウィンドウの×ボタンが押されるまでループ
   while (msg.message != WM_QUIT) {
@@ -443,6 +469,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     debug->ReportLiveObjects(DXGI_DEBUG_D3D12, DXGI_DEBUG_RLO_ALL);
     debug->Release();
   }
+
+  // 02_00 資料23
+  /*Log(os,
+      ConvertString(std::format(L"Begin CompileShader, path:{}, profile:{}\n",
+                                filepath, profile)));*/ 
+  // 25もosをついか
 
   return 0;
 }
