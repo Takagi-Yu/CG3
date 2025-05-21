@@ -26,6 +26,20 @@ struct Vector4 {
   float w;
 };
 
+struct Matrix4x4 {
+  float m[4][4];
+};
+
+Matrix4x4 MakeIdentity4x4() {
+  Matrix4x4 result = {
+      1, 0, 0, 0, 
+      0, 1, 0, 0, 
+      0, 0, 1, 0, 
+      0, 0, 0, 1
+  };
+  return result;
+}
+
 static LONG WINAPI ExportDump(EXCEPTION_POINTERS *exception) {
   // 時刻を取得して、時刻を名前に入れたファイルを作成。Dumpディレクトリ以下に出力
   SYSTEMTIME time;
@@ -182,7 +196,7 @@ ID3D12Resource* CreateBufferResource(ID3D12Device *device, size_t sizeInBytes) {
   // バッファリソース。テクスチャの場合はまた別の設定をする
   vertexResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
   vertexResourceDesc.Width =
-      sizeof(Vector4) * 3; // リソースのサイズ。今回はVector4を3頂点分
+      sizeInBytes; // リソースのサイズ。今回はVector4を3頂点分
   // バッファの場合はこれらは1にする決まり
   vertexResourceDesc.Height = 1;
   vertexResourceDesc.DepthOrArraySize = 1;
@@ -462,10 +476,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
   // RootParamater作成。複数設定できるので配列。今回は結果1つだけなので長さ1の配列
-  D3D12_ROOT_PARAMETER rootParameters[1] = {};
+  D3D12_ROOT_PARAMETER rootParameters[2] = {};
   rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // CBVを使う
   rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // PixelShaderで使う
-  rootParameters[0].Descriptor.ShaderRegister = 0; // レジスタ番号0とバインド
+  rootParameters[0].Descriptor.ShaderRegister = 0; // レジスタ番号0を使う
+  rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // CBVを使う
+  rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; // PixelShaderで使う
+  rootParameters[1].Descriptor.ShaderRegister = 0; // レジスタ番号0を使う
   descriptionRootSignature.pParameters = rootParameters; // ルートパラメータ配列へのポインタ
   descriptionRootSignature.NumParameters = _countof(rootParameters); // 配列の長さ
 
@@ -618,6 +635,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   scissorRect.bottom = kClientheight;
 
 
+  // WVP用のリソースを作る。MAtrix4x4 1つ分のサイズを用意する
+  ID3D12Resource *wvpResource = CreateBufferResource(device, sizeof(Matrix4x4));
+  // データを書き込む
+  Matrix4x4 *wvpData = nullptr;
+  // 書き込むためのアドレスを取得
+  wvpResource->Map(0, nullptr, reinterpret_cast<void **>(&wvpData));
+  // 単位行列を書き込んでおく
+  *wvpData = MakeIdentity4x4();
+
 
   MSG msg{};
   // ウィンドウの×ボタンが押されるまでループ
@@ -666,6 +692,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       // マテリアルCBufferの場所を設定
       commandList->SetGraphicsRootConstantBufferView(
           0, materialResource->GetGPUVirtualAddress());
+      // wvp用のCBufferの場所を設定
+      commandList->SetGraphicsRootConstantBufferView(
+          1, wvpResource->GetGPUVirtualAddress());
 
       // 描画！(DrawCall/ドローコール)。3頂点で1つのインスタンスについては今後
       commandList->DrawInstanced(3, 1, 0, 0);
@@ -738,6 +767,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   pixelShaderBlob->Release();
   vertexShaderBlob->Release();
   materialResource->Release();
+  wvpResource->Release();
   #ifdef _DEBUG
   debugController->Release();
   #endif 
