@@ -19,6 +19,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd,
                                                              UINT msg,
                                                              WPARAM wParam,
                                                              LPARAM lParam);
+#include "externals/DirectXTex/DirectXTex.h"
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -471,7 +472,7 @@ IDxcBlob *CompileShader(
 
 }
 
-ID3D12Resource* CreateBufferResource(ID3D12Device *device, size_t sizeInBytes) {
+ID3D12Resource *CreateBufferResource(ID3D12Device *device, size_t sizeInBytes) {
   // 頂点リソース用のヒープの設定
   D3D12_HEAP_PROPERTIES uploadHeapProperties{};
   uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD; // UploadHeapを使う
@@ -489,7 +490,7 @@ ID3D12Resource* CreateBufferResource(ID3D12Device *device, size_t sizeInBytes) {
   // バッファの場合はこれにする決まり
   vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
   // 実際に頂点リソースを作る
-  //ID3D12Resource *vertexResource =
+  // ID3D12Resource *vertexResource =
   //    CreateBufferResource(device, sizeof(Vector4) * 3);
   ID3D12Resource *vertexResource = nullptr;
   HRESULT hr = device->CreateCommittedResource(
@@ -501,8 +502,27 @@ ID3D12Resource* CreateBufferResource(ID3D12Device *device, size_t sizeInBytes) {
   return vertexResource;
 }
 
-int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+DirectX::ScratchImage LoadTexture(const std::string& filepath) {
+  // テクスチャファイルを読んでプログラムで扱えるようにする
+  DirectX::ScratchImage image{};
+  std::wstring filepathW=ConvertString(filepath);
+  HRESULT hr = DirectX::LoadFromWICFile(
+      filepathW.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
+  assert(SUCCEEDED(hr));
 
+  // ミニマップの作成
+  DirectX::ScratchImage mipImage{};
+  hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(),
+                                image.GetMetadata(), DirectX::TEX_FILTER_SRGB,
+                                0, mipImage);
+  assert(SUCCEEDED(hr));
+
+  // ミニマップ付きのデータを返す
+  return mipImage;
+}
+
+int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+  CoInitializeEx(0, COINIT_MULTITHREADED);
   // 誰も捕捉しなかった場合に(Unhedled),補足する関数を登録
   // main関数始まってすぐに登録すると良い
   SetUnhandledExceptionFilter(ExportDump);
@@ -1123,6 +1143,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   debugController->Release();
   #endif 
   CloseWindow(hwnd);
+
+  CoUninitialize();
 
   // リソースリークチェック
   IDXGIDebug1 *debug;
