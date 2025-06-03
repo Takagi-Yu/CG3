@@ -587,6 +587,39 @@ ID3D12Resource* UploadTextureData(ID3D12Resource* texture, const DirectX::Scratc
   return intermediateResource;
 }
 
+ID3D12Resource* CreateDepthStencilTextureResource(ID3D12Device* device,
+    int32_t width,
+    int32_t height) {
+    // 生成するResourceの設定
+  D3D12_RESOURCE_DESC resourceDesc{};
+  resourceDesc.Width = width; // Textureの幅
+  resourceDesc.Height = height; // Textureの高さ
+  resourceDesc.MipLevels = 1; // mipmapの数
+  resourceDesc.DepthOrArraySize = 1; // 奥行き or 配列Textureの配列数
+  resourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; // DepthStencilとして利用可能なフォーマット
+  resourceDesc.SampleDesc.Count = 1; // サンプリングカウント。1固定。
+  resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D; // 2次元
+  resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL; // DepthStencilとして使う通知
+
+  // 利用するHeapの設定
+  D3D12_HEAP_PROPERTIES heapProperties{};
+  heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT; // VRAM上に作る
+
+  // 深度値のクリア
+  D3D12_CLEAR_VALUE depthClearValue{};
+  depthClearValue.DepthStencil.Depth = 1.0f;
+  depthClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+
+  // Rsourceの生成
+  ID3D12Resource *resource = nullptr;
+  HRESULT hr = device->CreateCommittedResource(
+      &heapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc,
+      D3D12_RESOURCE_STATE_DEPTH_WRITE, &depthClearValue,
+      IID_PPV_ARGS(&resource));
+  assert(SUCCEEDED(hr));
+  return resource;
+}
+
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   CoInitializeEx(0, COINIT_MULTITHREADED);
   // 誰も捕捉しなかった場合に(Unhedled),補足する関数を登録
@@ -966,7 +999,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // RasiterzerStateの設定
   D3D12_RASTERIZER_DESC rasterizerDesc{};
   // 裏面(時計回り)を表示しない
-  rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
+  rasterizerDesc.CullMode = D3D12_CULL_MODE_NONE;
+  //rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
   // 三角形の中を塗りつぶす
   rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
@@ -1029,7 +1063,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // 実際に頂点リソースを作る
   // ID3D12Resource* vertexResource = nullptr;
   ID3D12Resource *vertexResource =
-      CreateBufferResource(device, sizeof(VertexData) * 3);
+      CreateBufferResource(device, sizeof(VertexData) * 6);
   // hr = device->CreateCommittedResource(
   //     &uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc,
   //     D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
@@ -1041,7 +1075,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // リソースの先頭のアドレスから使う
   vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
   // 使用するリソースのサイズは頂点3つ分のサイズ
-  vertexBufferView.SizeInBytes = sizeof(VertexData) * 3;
+  vertexBufferView.SizeInBytes = sizeof(VertexData) * 6;
   // 1頂点当たりのサイズ
   vertexBufferView.StrideInBytes = sizeof(VertexData);
 
@@ -1058,6 +1092,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // 右下
   vertexData[2].position = {0.5f, -0.5f, 0.0f, 1.0f};
   vertexData[2].texcoord = {1.0f, 1.0f};
+
+   // 左下2
+  vertexData[3].position = {-0.5f, -0.5f, 0.5f, 1.0f};
+  vertexData[3].texcoord = {0.0f, 1.0f};
+  // 上2
+  vertexData[4].position = {0.0f, 0.0f, 0.0f, 1.0f};
+  vertexData[4].texcoord = {0.5f, 0.0f};
+  // 右下2
+  vertexData[5].position = {0.5f, -0.5f, -0.5f, 1.0f};
+  vertexData[5].texcoord = {1.0f, 1.0f};
 
 
   // ビューポート
@@ -1141,7 +1185,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                                    textureSrvHandleCPU);
 
 
-
+  // DepthStencilTextureをウィンドウのサイズで作成
+  ID3D12Resource *depthStencilResource =
+      CreateDepthStencilTextureResource(device, kClientWidth, kClientheight);
 
 
   MSG msg{};
@@ -1232,7 +1278,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 
       // 描画！(DrawCall/ドローコール)。3頂点で1つのインスタンスについては今後
-      commandList->DrawInstanced(3, 1, 0, 0);
+      commandList->DrawInstanced(6, 1, 0, 0);
 
 
       // 実際のcommandListのImGuiの描画コマンドを積む
@@ -1315,6 +1361,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   CloseWindow(hwnd);
   textureResource->Release();
   intermediateResource->Release();
+  depthStencilResource->Release();
 
   CoUninitialize();
 
