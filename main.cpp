@@ -780,7 +780,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     // エラー時に止まる
     infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
     // 警告時に止まる
-     infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
+    infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
     // 抑制するメッセージのID
     D3D12_MESSAGE_ID denyIds[] = {
         // Windows11でのDXGIデバッグレイヤーの相互作用バグによるエラーメッセージ
@@ -1458,6 +1458,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                   kClientheight)));
 
   CloseHandle(fenceEvent);
+  CloseWindow(hwnd);
   fence->Release();
   rtvDescriptorHeap->Release();
   swapChainResources[0]->Release();
@@ -1472,7 +1473,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   #ifdef _DEBUG
   debugController->Release();
   #endif 
-  CloseWindow(hwnd);
+
   srvDescriptorHeap->Release();
   dxcUtils->Release();
   dxcCompiler->Release();
@@ -1488,7 +1489,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   vertexShaderBlob->Release();
   materialResource->Release();
   wvpResource->Release();
-
+  infoQueue->Release();
   textureResource->Release();
   intermediateResource->Release();
   depthStencilResource->Release();
