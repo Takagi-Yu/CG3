@@ -1287,7 +1287,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
 
-
+  
 
 
   MSG msg{};
@@ -1469,6 +1469,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
   useAdapter->Release();
   dxgiFactory->Release();
+  #ifdef _DEBUG
+  debugController->Release();
+  #endif 
+  CloseWindow(hwnd);
+  srvDescriptorHeap->Release();
+  dxcUtils->Release();
+  dxcCompiler->Release();
+  includeHandler->Release();
   vertexResource->Release();
   graphicsPipelineState->Release();
   signatureBlob->Release();
@@ -1480,10 +1488,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   vertexShaderBlob->Release();
   materialResource->Release();
   wvpResource->Release();
-  #ifdef _DEBUG
-  debugController->Release();
-  #endif 
-  CloseWindow(hwnd);
+
   textureResource->Release();
   intermediateResource->Release();
   depthStencilResource->Release();
