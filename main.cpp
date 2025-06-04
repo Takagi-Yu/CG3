@@ -202,6 +202,30 @@ Matrix4x4 MakePerspectiveFovMatrix(float fovY, float aspectRatio,
   return result;
 }
 
+Matrix4x4 MakeOrthographicMatrix(float left, float top, float right,
+                                 float bottom, float nearClip, float farClip) {
+  Matrix4x4 result;
+
+  result.m[0][0] = 2.0f / (right - left);
+  result.m[0][1] = 0.0f;
+  result.m[0][2] = 0.0f;
+  result.m[0][3] = 0.0f;
+  result.m[1][0] = 0.0f;
+  result.m[1][1] = 2.0f / (top - bottom);
+  result.m[1][2] = 0.0f;
+  result.m[1][3] = 0.0f;
+  result.m[2][0] = 0.0f;
+  result.m[2][1] = 0.0f;
+  result.m[2][2] = 1.0f / (farClip - nearClip);
+  result.m[2][3] = 0.0f;
+  result.m[3][0] = (left + right) / (left - right);
+  result.m[3][1] = (top + bottom) / (bottom - top);
+  result.m[3][2] = nearClip / (nearClip - farClip);
+  result.m[3][3] = 1.0f;
+
+  return result;
+}
+
 // 逆行列
 Matrix4x4 Inverse(const Matrix4x4 &m) {
   Matrix4x4 result;
@@ -756,7 +780,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     // エラー時に止まる
     infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
     // 警告時に止まる
-    // infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
+     infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
     // 抑制するメッセージのID
     D3D12_MESSAGE_ID denyIds[] = {
         // Windows11でのDXGIデバッグレイヤーの相互作用バグによるエラーメッセージ
@@ -1115,6 +1139,40 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   vertexData[5].texcoord = {1.0f, 1.0f};
 
 
+  // Sprite用の頂点リソースを作る
+  ID3D12Resource *vertexResourceSprite =
+      CreateBufferResource(device, sizeof(VertexData) * 6);
+  
+  
+  // 頂点バッファビューを作成する
+  D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSprite{};
+  // リソースの先頭のアドレスから使う
+  vertexBufferViewSprite.BufferLocation =
+      vertexResourceSprite->GetGPUVirtualAddress();
+  // 使用するリソースのサイズは頂点6つ分のサイズ
+  vertexBufferViewSprite.SizeInBytes = sizeof(VertexData) * 6;
+  // 1頂点あたりのサイズ
+  vertexBufferViewSprite.StrideInBytes = sizeof(VertexData);
+
+
+  VertexData *vertexDataSprite = nullptr;
+  vertexResourceSprite->Map(0, nullptr,
+                            reinterpret_cast<void **>(&vertexDataSprite));
+  // 1枚目の三角形
+  vertexDataSprite[0].position = {0.0f, 360.0f, 0.0f, 1.0f}; // 左下
+  vertexDataSprite[0].texcoord = {0.0f, 1.0f};
+  vertexDataSprite[1].position = {0.0f, 0.0f, 0.0f, 1.0f}; // 左上
+  vertexDataSprite[1].texcoord = {0.0f, 0.0f};
+  vertexDataSprite[2].position = {640.0f, 360.0f, 0.0f, 1.0f}; // 右下
+  vertexDataSprite[2].texcoord = {1.0f, 1.0f};
+  // 2枚目の三角形
+  vertexDataSprite[3].position = {0.0f, 0.0f, 0.0f, 1.0f}; // 左下
+  vertexDataSprite[3].texcoord = {0.0f, 0.0f};
+  vertexDataSprite[4].position = {640.0f, 0.0f, 0.0f, 1.0f}; // 左上
+  vertexDataSprite[4].texcoord = {1.0f, 0.0f};
+  vertexDataSprite[5].position = {640.0f, 360.0f, 0.0f, 1.0f}; // 右下
+  vertexDataSprite[5].texcoord = {1.0f, 1.0f};
+
   // ビューポート
   D3D12_VIEWPORT viewport{};
   // クライアント領域のサイズと一緒にして画面全体に表示
@@ -1145,11 +1203,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   *transformationMatrixData = MakeIdentity4x4();
 
 
+  // Sprite用のTransformationMatrix用のリソースを作る。Matrix4x4 1つ分のサイズを用意する
+  ID3D12Resource *transformationMatrixResourceSprite =
+      CreateBufferResource(device, sizeof(Matrix4x4));
+  // データを書き込む
+  Matrix4x4 *transformationMatrixDataSprite = nullptr;
+  // 書き込むためのアドレスを取得
+  transformationMatrixResourceSprite->Map(
+      0, nullptr, reinterpret_cast<void **>(&transformationMatrixDataSprite));
+  // 単位行列を書き込んでおく
+  *transformationMatrixDataSprite = MakeIdentity4x4();
+
+
   // Transform変数を作る
   Transform transform{
       {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
   Transform cameraTransform{
       {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -5.0f}};
+  Transform transformSprite{
+      {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
 
 
   // こういうもんである
@@ -1264,6 +1336,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       //*wvpData = worldMatrix;
 
 
+      // Sprite用のWorldProjectionMatrixを作る
+      Matrix4x4 worldMatrixSprite =
+          MakeAffineMatrix(transformSprite.scale, transformSprite.rotate,
+                           transformSprite.translate);
+      Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
+      Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(
+          0.0f, 0.0f, float(kClientWidth), float(kClientheight), 0.0f, 100.0f);
+      Matrix4x4 worldViewProjectionMatrixSprite =
+          Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
+      *transformationMatrixDataSprite = worldViewProjectionMatrixSprite;
+
+
       ImGui::Begin("MaterialColor");
       ImGui::ColorEdit4("Color", &(*materialData).x);
       ImGui::End();
@@ -1314,6 +1398,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       commandList->DrawInstanced(6, 1, 0, 0);
 
 
+      commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // VBVを設定
+      commandList->SetGraphicsRootConstantBufferView(
+          1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
+      commandList->DrawInstanced(6, 1, 0, 0);
+
+
       // 実際のcommandListのImGuiの描画コマンドを積む
       ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
 
@@ -1356,6 +1446,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     }
   }
 
+  CoUninitialize();
+
   // こういうもんである。初期化と逆順に行う
   ImGui_ImplDX12_Shutdown();
   ImGui_ImplWin32_Shutdown();
@@ -1374,7 +1466,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   commandList->Release();
   commandAllocator->Release();
   commandQueue->Release();
-  device->Release();
+
   useAdapter->Release();
   dxgiFactory->Release();
   vertexResource->Release();
@@ -1396,8 +1488,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   intermediateResource->Release();
   depthStencilResource->Release();
   dsvDescriptorHeap->Release();
+  vertexResourceSprite->Release();
+  transformationMatrixResourceSprite->Release();
 
-  CoUninitialize();
+
+  device->Release();
 
   // リソースリークチェック
   IDXGIDebug1 *debug;
