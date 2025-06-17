@@ -401,9 +401,9 @@ std::string ConvertString(const std::wstring &str) {
   return result;
 }
 
-/*void Log(const std::string &message) {
-    OutputDebugStringA(message.c_str());
-}*/
+//void Log(const std::string &message) {
+//    OutputDebugStringA(message.c_str());
+//}
 
 void Log(std::ostream &os, const std::string &message) {
   os << message << std::endl;
@@ -415,8 +415,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
   if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
     return true;
   }
-    //メッセージに応じてゲーム固有の処理を行う
-    switch (msg) {
+  //メッセージに応じてゲーム固有の処理を行う
+  switch (msg) {
         //ウィンドウが破棄された
   case WM_DESTROY:
       //OSに対して、アプリの終了を伝える
@@ -772,7 +772,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   assert(device != nullptr);
   Log(logStream, "Complete create D3D12Device!!!\n");
 
-#ifdef _DEBUG
+  #ifdef _DEBUG
   ID3D12InfoQueue *infoQueue = nullptr;
   if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(&infoQueue)))) {
     // やばいエラー時に止まる
@@ -992,14 +992,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   assert(SUCCEEDED(hr));
 
   // InputLayout
-  /* D3D12_INPUT_ELEMENT_DESC inputElementDescs[1] = {};
-  inputElementDescs[0].SemanticName = "POSITION";
-  inputElementDescs[0].SemanticIndex = 0;
-  inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-  inputElementDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-  D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
-  inputLayoutDesc.pInputElementDescs = inputElementDescs;
-  inputLayoutDesc.NumElements = _countof(inputElementDescs);*/
+  //D3D12_INPUT_ELEMENT_DESC inputElementDescs[1] = {};
+  //inputElementDescs[0].SemanticName = "POSITION";
+  //inputElementDescs[0].SemanticIndex = 0;
+  //inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+  //inputElementDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+  //D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
+  //inputLayoutDesc.pInputElementDescs = inputElementDescs;
+  //inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
   D3D12_INPUT_ELEMENT_DESC inputElementDescs[2] = {};
   inputElementDescs[0].SemanticName = "POSITION";
@@ -1489,7 +1489,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   vertexShaderBlob->Release();
   materialResource->Release();
   wvpResource->Release();
-  infoQueue->Release();
+
   textureResource->Release();
   intermediateResource->Release();
   depthStencilResource->Release();
