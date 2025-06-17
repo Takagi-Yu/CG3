@@ -853,8 +853,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       D3D12_DESCRIPTOR_HEAP_TYPE_RTV; // レンダーターゲットビュー用
   rtvDescriptorHeapDesc.NumDescriptors =
       2; // ダブルバッファ用に2つ。多くても別にかまわない
-  hr = device->CreateDescriptorHeap(&rtvDescriptorHeapDesc,
-                                    IID_PPV_ARGS(&rtvDescriptorHeap));
+
   // ディスクリプターヒープが作れなかったので起動できない
   assert(SUCCEEDED(hr));
 
