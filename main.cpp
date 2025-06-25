@@ -23,6 +23,8 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd,
 #include "externals/DirectXTex/d3dx12.h"
 #include <vector>
 
+#define M_PI 3.141592f  
+
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "Dbghelp.lib")
@@ -1078,6 +1080,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       &graphicsPipelineStateDesc, IID_PPV_ARGS(&graphicsPipelineState));
   assert(SUCCEEDED(hr));
 
+  const uint32_t kSubdivision = 6; // 分割数
+  uint32_t kSphereVertexNum = kSubdivision * kSubdivision * 6;
   // 頂点リソース用のヒープの設定
   D3D12_HEAP_PROPERTIES uploadHeapProperties{};
   uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD; // UploadHeapを使う
@@ -1097,7 +1101,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // 実際に頂点リソースを作る
   // ID3D12Resource* vertexResource = nullptr;
   ID3D12Resource *vertexResource =
-      CreateBufferResource(device, sizeof(VertexData) * 6);
+      CreateBufferResource(device, sizeof(VertexData) * kSphereVertexNum);
   // hr = device->CreateCommittedResource(
   //     &uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc,
   //     D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
@@ -1109,7 +1113,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // リソースの先頭のアドレスから使う
   vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
   // 使用するリソースのサイズは頂点3つ分のサイズ
-  vertexBufferView.SizeInBytes = sizeof(VertexData) * 6;
+  vertexBufferView.SizeInBytes = sizeof(VertexData) * kSphereVertexNum;
   // 1頂点当たりのサイズ
   vertexBufferView.StrideInBytes = sizeof(VertexData);
 
@@ -1117,6 +1121,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   VertexData *vertexData = nullptr;
   // 書き込むためのアドレスを取得
   vertexResource->Map(0, nullptr, reinterpret_cast<void **>(&vertexData));
+
   // 左下
   vertexData[0].position = {-0.5f, -0.5f, 0.0f, 1.0f};
   vertexData[0].texcoord = {0.0f, 1.0f};
@@ -1136,6 +1141,77 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // 右下2
   vertexData[5].position = {0.5f, -0.5f, -0.5f, 1.0f};
   vertexData[5].texcoord = {1.0f, 1.0f};
+
+
+  // 経度分割1つ分の角度
+  const float kLonEvery = 2.0f * M_PI / float(kSubdivision);
+  // 緯度分割1つ分の角度
+  const float kLatEvery = M_PI / float(kSubdivision);
+
+  for (uint32_t latIndex = 0; latIndex < kSubdivision; ++latIndex) {
+    // 緯度
+    float lat = -M_PI / 2.0f + kLatEvery * latIndex;
+    float nextLat = lat + kLatEvery;
+
+    float v0 = 1.0f - float(latIndex) / float(kSubdivision);
+    float v1 = 1.0f - float(latIndex + 1) / float(kSubdivision);
+    // 経度の方向に分割しながら線を引く
+    for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex) {
+      uint32_t start = (latIndex * kSubdivision + lonIndex) * 6;
+      // 経度
+      float lon = lonIndex * kLonEvery; // 現在
+      float nextLon = lon + kLonEvery;  // 次
+
+      float u0 = float(lonIndex) / float(kSubdivision);
+      float u1 = float(lonIndex + 1) / float(kSubdivision);
+
+      VertexData vertA{};
+      vertA.position = {
+          cos(lat) * cos(lon), 
+          sin(lat), 
+          cos(lat) * sin(lon),
+          1.0f
+      };
+      vertA.texcoord = {u0, v0};
+
+      VertexData vertB{};
+      vertB.position = {
+          cos(nextLat) * cos(lon), 
+          sin(nextLat),
+          cos(nextLat) * sin(lon),
+          1.0f
+      };
+      vertB.texcoord = {u0, v1};
+
+      VertexData vertC{};
+      vertC.position = {
+          cos(lat) * cos(nextLon), 
+          sin(lat),
+          cos(lat) * sin(nextLon),
+          1.0f
+      };
+      vertC.texcoord = {u1, v0};
+
+      VertexData vertD{};
+      vertD.position = {
+          cos(nextLat) * cos(nextLon), 
+          sin(nextLat),
+          cos(nextLat) * sin(nextLon), 
+          1.0f
+      };
+      vertD.texcoord = {u1, v1};
+
+      // 頂点にデータを入力する。基準点a
+      vertexData[start + 0] = vertA;
+      vertexData[start + 1] = vertB;
+      vertexData[start + 2] = vertC;
+
+      vertexData[start + 3] = vertD;
+      vertexData[start + 4] = vertC;
+      vertexData[start + 5] = vertB;
+    }
+  }
+
 
 
   // Sprite用の頂点リソースを作る
@@ -1394,7 +1470,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 
       // 描画！(DrawCall/ドローコール)。3頂点で1つのインスタンスについては今後
-      commandList->DrawInstanced(6, 1, 0, 0);
+      commandList->DrawInstanced(kSphereVertexNum, 1, 0, 0);
 
 
       commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // VBVを設定
