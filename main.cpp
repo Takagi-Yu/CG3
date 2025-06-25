@@ -62,6 +62,12 @@ struct Transform {
 struct VertexData {
   Vector4 position;
   Vector2 texcoord;
+  Vector3 normal;
+};
+
+struct Material {
+  Vector4 color;
+  int32_t enableLighting;
 };
 
 Matrix4x4 MakeIdentity4x4() {
@@ -935,7 +941,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   descriptionRootSignature.Flags =
       D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
-    D3D12_DESCRIPTOR_RANGE descriptorRange[1] = {};
+  D3D12_DESCRIPTOR_RANGE descriptorRange[1] = {};
   descriptorRange[0].BaseShaderRegister = 0;                      // 0から始まる
   descriptorRange[0].NumDescriptors = 1;                          // 数は1つ
   descriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; // SRVを使う
@@ -993,6 +999,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // 今回は赤を書き込んでみる
   *materialData = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
+
+  // sprite用のマテリアルリソースを作る
+  ID3D12Resource *materialResourceSprite =
+      CreateBufferResource(device, sizeof(Material));
+  Material *materialDataSprite = nullptr;
+  // SpriteはLightingしないのでfalseを設定する
+  materialDataSprite->enableLighting = false;
+
   // シリアライズしてバイナリにする
   ID3DBlob *signatureBlob = nullptr;
   ID3DBlob *errorBlob = nullptr;
@@ -1020,7 +1034,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   //inputLayoutDesc.pInputElementDescs = inputElementDescs;
   //inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
-  D3D12_INPUT_ELEMENT_DESC inputElementDescs[2] = {};
+  D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
   inputElementDescs[0].SemanticName = "POSITION";
   inputElementDescs[0].SemanticIndex = 0;
   inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -1029,6 +1043,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   inputElementDescs[1].SemanticIndex = 0;
   inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
   inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+  inputElementDescs[2].SemanticName = "NORMAL";
+  inputElementDescs[2].SemanticIndex = 0;
+  inputElementDescs[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+  inputElementDescs[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
   D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
   inputLayoutDesc.pInputElementDescs = inputElementDescs;
   inputLayoutDesc.NumElements = _countof(inputElementDescs);
@@ -1227,6 +1245,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       vertexData[start + 3] = vertD;
       vertexData[start + 4] = vertC;
       vertexData[start + 5] = vertB;
+      
+      vertexData[start + 0].normal = {
+          vertexData[start + 0].position.x,
+          vertexData[start + 0].position.y,
+          vertexData[start + 0].position.z
+      };
     }
   }
 
@@ -1265,6 +1289,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   vertexDataSprite[4].texcoord = {1.0f, 0.0f};
   vertexDataSprite[5].position = {640.0f, 360.0f, 0.0f, 1.0f}; // 右下
   vertexDataSprite[5].texcoord = {1.0f, 1.0f};
+
+  vertexDataSprite[0].normal = {0.0f, 0.0f, -1.0f};
 
   // ビューポート
   D3D12_VIEWPORT viewport{};
@@ -1525,6 +1551,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       commandList->DrawInstanced(kSphereVertexNum, 1, 0, 0);
 
       commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
+
+      // マテリアルCBufferの場所を設定
+      commandList->SetGraphicsRootConstantBufferView(
+          0, materialResourceSprite->GetGPUVirtualAddress());
 
       commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // VBVを設定
       commandList->SetGraphicsRootConstantBufferView(
