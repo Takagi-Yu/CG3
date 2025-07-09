@@ -1484,6 +1484,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
   bool useMonsterBall = true;
 
+  bool texture = true;
+
 
   MSG msg{};
   // ウィンドウの×ボタンが押されるまでループ
@@ -1548,6 +1550,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       ImGui::Begin("MaterialColor");
       ImGui::ColorEdit4("Color", &(*materialData).color.x);
       ImGui::Checkbox("useMonsterBall", &useMonsterBall);
+      ImGui::Checkbox("texture", &texture);
       ImGui::End();
       // 開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
       ImGui::ShowDemoWindow();
@@ -1608,7 +1611,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // VBVを設定
       commandList->SetGraphicsRootConstantBufferView(
           1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
-      commandList->DrawInstanced(6, 1, 0, 0);
+      commandList->DrawInstanced(6, texture, 0, 0);
 
 
       // 実際のcommandListのImGuiの描画コマンドを積む
