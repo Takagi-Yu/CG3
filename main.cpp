@@ -1482,8 +1482,32 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                                    textureSrvHandleCPU2);
 
 
-  bool useMonsterBall = true;
+  ID3D12Resource *indexResourceSprite =
+      CreateBufferResource(device, sizeof(uint32_t) * 6);
+  
+  D3D12_INDEX_BUFFER_VIEW indexBufferViewSprite{};
+  // リソースの先頭のアドレスから使う
+  indexBufferViewSprite.BufferLocation =
+      indexResourceSprite->GetGPUVirtualAddress();
+  // 使用するリソースのサイズはインデックス6つ分のサイズ
+  indexBufferViewSprite.SizeInBytes = sizeof(uint32_t) * 6;
+  // インデックスはuint32_tとする
+  indexBufferViewSprite.Format = DXGI_FORMAT_R32_UINT;
 
+  // インデックスリソースにデータを書き込む
+  uint32_t *indexDataSprite = nullptr;
+  indexResourceSprite->Map(0, nullptr,
+                           reinterpret_cast<void **>(&indexDataSprite));
+  indexDataSprite[0] = 0;
+  indexDataSprite[1] = 1;
+  indexDataSprite[2] = 2;
+  indexDataSprite[3] = 1;
+  indexDataSprite[4] = 3;
+  indexDataSprite[5] = 2;
+
+
+
+  bool useMonsterBall = true;
   bool texture = true;
 
 
@@ -1582,6 +1606,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       commandList->SetGraphicsRootSignature(rootSignature);
       commandList->SetPipelineState(graphicsPipelineState); // PSOを設定
       commandList->IASetVertexBuffers(0, 1, &vertexBufferView); // VBVを設定
+      commandList->IASetIndexBuffer(&indexBufferViewSprite); // IBVを設定
       // 形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけばいい
       commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -1601,6 +1626,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
       // 描画！(DrawCall/ドローコール)。3頂点で1つのインスタンスについては今後
       commandList->DrawInstanced(kSphereVertexNum, 1, 0, 0);
+      commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 
       commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 
@@ -1708,6 +1734,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   depthStencilResource->Release();
   dsvDescriptorHeap->Release();
   vertexResourceSprite->Release();
+  indexResourceSprite->Release();
   transformationMatrixResourceSprite->Release();
 
 
