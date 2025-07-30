@@ -1236,13 +1236,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 
-  ID3D12Resource *vertexResource =
+  ID3D12Resource *sphereVertexResource =
       CreateBufferResource(device, sizeof(VertexData) * kSphereVertexNum);
 
   // 頂点バッファビューを作成する
   D3D12_VERTEX_BUFFER_VIEW sphereVertexBufferView{};
   // リソースの先頭のアドレスから使う
-  sphereVertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
+  sphereVertexBufferView.BufferLocation = sphereVertexResource->GetGPUVirtualAddress();
   // 使用するリソースのサイズは頂点3つ分のサイズ
   sphereVertexBufferView.SizeInBytes = sizeof(VertexData) * kSphereVertexNum;
   // 1頂点当たりのサイズ
@@ -1251,7 +1251,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // 頂点リソースにデータを書き込む
   VertexData *vertexData = nullptr;
   // 書き込むためのアドレスを取得
-  vertexResource->Map(0, nullptr, reinterpret_cast<void **>(&vertexData));
+  sphereVertexResource->Map(0, nullptr, reinterpret_cast<void **>(&vertexData));
 
   // 左下
   vertexData[0].position = {-0.5f, -0.5f, 0.0f, 1.0f};
@@ -1752,7 +1752,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   dxcUtils->Release();
   dxcCompiler->Release();
   includeHandler->Release();
-  vertexResource->Release();
+  sphereVertexResource->Release();
   graphicsPipelineState->Release();
   signatureBlob->Release();
   if (errorBlob) {
