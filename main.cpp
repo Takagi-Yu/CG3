@@ -1034,6 +1034,30 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   directionalLightData->direction = {1.0f, 0.0f, 0.0f};
   directionalLightData->intensity = 1.0f;
 
+  ID3D12Resource *indexResourceSprite =
+      CreateBufferResource(device, sizeof(uint32_t) * 6);
+  
+  D3D12_INDEX_BUFFER_VIEW indexBufferViewSprite{};
+  // リソースの先頭のアドレスから使う
+  indexBufferViewSprite.BufferLocation =
+      indexResourceSprite->GetGPUVirtualAddress();
+  // 使用するリソースのサイズはインデックス6つ分のサイズ
+  indexBufferViewSprite.SizeInBytes = sizeof(uint32_t) * 6;
+  // インデックスはuint32_tとする
+  indexBufferViewSprite.Format = DXGI_FORMAT_R32_UINT;
+
+  // インデックスリソースにデータを書き込む
+  uint32_t *indexDataSprite = nullptr;
+  indexResourceSprite->Map(0, nullptr,
+                           reinterpret_cast<void **>(&indexDataSprite));
+  indexDataSprite[0] = 0;
+  indexDataSprite[1] = 1;
+  indexDataSprite[2] = 2;
+  indexDataSprite[3] = 1;
+  indexDataSprite[4] = 3;
+  indexDataSprite[5] = 2;
+
+
   // シリアライズしてバイナリにする
   ID3DBlob *signatureBlob = nullptr;
   ID3DBlob *errorBlob = nullptr;
@@ -1144,7 +1168,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   assert(SUCCEEDED(hr));
 
   const uint32_t kSubdivision = 16; // 分割数
-  uint32_t kSphereVertexNum = kSubdivision * kSubdivision * 6;
+  uint32_t kSphereVertexNum = (kSubdivision + 1) * (kSubdivision + 1);
+  uint32_t kSphereIndexNum = kSubdivision * kSubdivision * 6;
   // 頂点リソース用のヒープの設定
   D3D12_HEAP_PROPERTIES uploadHeapProperties{};
   uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD; // UploadHeapを使う
@@ -1163,22 +1188,33 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
   // 実際に頂点リソースを作る
   // ID3D12Resource* vertexResource = nullptr;
+
+  ID3D12Resource *sphereIndexResource =
+      CreateBufferResource(device, sizeof(uint32_t) * kSphereIndexNum);
+
+  D3D12_INDEX_BUFFER_VIEW sphereBufferView{};
+  sphereBufferView.BufferLocation =
+      sphereIndexResource->GetGPUVirtualAddress();
+  sphereBufferView.SizeInBytes = sizeof(uint32_t) * kSphereIndexNum;
+  sphereBufferView.Format = DXGI_FORMAT_R32_UINT;
+
+  uint32_t *sphereIndexData = nullptr;
+  sphereIndexResource->Map(0, nullptr,
+                            reinterpret_cast<void **>(&sphereIndexData));
+
+
+
   ID3D12Resource *vertexResource =
       CreateBufferResource(device, sizeof(VertexData) * kSphereVertexNum);
-  // hr = device->CreateCommittedResource(
-  //     &uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc,
-  //     D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-  //     IID_PPV_ARGS(&vertexResource));
-  // assert(SUCCEEDED(hr));
 
   // 頂点バッファビューを作成する
-  D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
+  D3D12_VERTEX_BUFFER_VIEW sphereVertexBufferView{};
   // リソースの先頭のアドレスから使う
-  vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
+  sphereVertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
   // 使用するリソースのサイズは頂点3つ分のサイズ
-  vertexBufferView.SizeInBytes = sizeof(VertexData) * kSphereVertexNum;
+  sphereVertexBufferView.SizeInBytes = sizeof(VertexData) * kSphereVertexNum;
   // 1頂点当たりのサイズ
-  vertexBufferView.StrideInBytes = sizeof(VertexData);
+  sphereVertexBufferView.StrideInBytes = sizeof(VertexData);
 
   // 頂点リソースにデータを書き込む
   VertexData *vertexData = nullptr;
@@ -1211,17 +1247,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // 緯度分割1つ分の角度
   const float kLatEvery = M_PI / float(kSubdivision);
 
-  for (uint32_t latIndex = 0; latIndex < kSubdivision; ++latIndex) {
-    // 緯度
+  for (uint32_t latIndex = 0; latIndex < kSubdivision+1; ++latIndex) {
+    // 緯度(南北)
     float lat = -M_PI / 2.0f + kLatEvery * latIndex;
     float nextLat = lat + kLatEvery;
 
     float v0 = 1.0f - float(latIndex) / float(kSubdivision);
     float v1 = 1.0f - float(latIndex + 1) / float(kSubdivision);
     // 経度の方向に分割しながら線を引く
-    for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex) {
-      uint32_t start = (latIndex * kSubdivision + lonIndex) * 6;
-      // 経度
+    for (uint32_t lonIndex = 0; lonIndex < kSubdivision+1; ++lonIndex) {
+      uint32_t start = (latIndex * (kSubdivision +1)+ lonIndex) ;
+      // 経度(東西)
       float lon = lonIndex * kLonEvery; // 現在
       float nextLon = lon + kLonEvery;  // 次
 
@@ -1242,60 +1278,33 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
           vertA.position.z,
       };
 
-      VertexData vertB{};
-      vertB.position = {
-          cos(nextLat) * cos(lon), 
-          sin(nextLat),
-          cos(nextLat) * sin(lon),
-          1.0f
-      };
-      vertB.texcoord = {u0, v1};
-      vertB.normal = {
-          vertB.position.x,
-          vertB.position.y,
-          vertB.position.z,
-      };
-
-      VertexData vertC{};
-      vertC.position = {
-          cos(lat) * cos(nextLon), 
-          sin(lat),
-          cos(lat) * sin(nextLon),
-          1.0f
-      };
-      vertC.texcoord = {u1, v0};
-      vertC.normal = {
-          vertC.position.x,
-          vertC.position.y,
-          vertC.position.z,
-      };
-
-      VertexData vertD{};
-      vertD.position = {
-          cos(nextLat) * cos(nextLon), 
-          sin(nextLat),
-          cos(nextLat) * sin(nextLon), 
-          1.0f
-      };
-      vertD.texcoord = {u1, v1};
-      vertD.normal = {
-          vertD.position.x,
-          vertD.position.y,
-          vertD.position.z,
-      };
-
       // 頂点にデータを入力する。基準点a
       vertexData[start + 0] = vertA;
-      vertexData[start + 1] = vertB;
-      vertexData[start + 2] = vertC;
-
-      vertexData[start + 3] = vertD;
-      vertexData[start + 4] = vertC;
-      vertexData[start + 5] = vertB;
       
     }
   }
 
+  for (uint32_t latIndex = 0; latIndex < kSubdivision ; ++latIndex) {
+    for (uint32_t lonIndex = 0; lonIndex < kSubdivision ; ++lonIndex) {
+      uint32_t start = (latIndex * kSubdivision + lonIndex) * 6;
+
+      uint32_t lb =
+          latIndex * (kSubdivision + 1) + lonIndex; // 左下のインデックス
+      uint32_t rb = lb + 1;                         // 右下のインデックス
+      uint32_t lt =
+          (latIndex + 1) * (kSubdivision + 1) + lonIndex; // 左上のインデックス
+      uint32_t rt = lt + 1;                               // 右上のインデックス
+
+
+
+      sphereIndexData[start + 0] = lb;
+      sphereIndexData[start + 1] = lt;
+      sphereIndexData[start + 2] = rb;
+      sphereIndexData[start + 3] = rb;
+      sphereIndexData[start + 4] = lt;
+      sphereIndexData[start + 5] = rt;
+    }
+  }
 
   // Sprite用の頂点リソースを作る
   ID3D12Resource *vertexResourceSprite =
@@ -1482,30 +1491,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                                    textureSrvHandleCPU2);
 
 
-  ID3D12Resource *indexResourceSprite =
-      CreateBufferResource(device, sizeof(uint32_t) * 6);
-  
-  D3D12_INDEX_BUFFER_VIEW indexBufferViewSprite{};
-  // リソースの先頭のアドレスから使う
-  indexBufferViewSprite.BufferLocation =
-      indexResourceSprite->GetGPUVirtualAddress();
-  // 使用するリソースのサイズはインデックス6つ分のサイズ
-  indexBufferViewSprite.SizeInBytes = sizeof(uint32_t) * 6;
-  // インデックスはuint32_tとする
-  indexBufferViewSprite.Format = DXGI_FORMAT_R32_UINT;
-
-  // インデックスリソースにデータを書き込む
-  uint32_t *indexDataSprite = nullptr;
-  indexResourceSprite->Map(0, nullptr,
-                           reinterpret_cast<void **>(&indexDataSprite));
-  indexDataSprite[0] = 0;
-  indexDataSprite[1] = 1;
-  indexDataSprite[2] = 2;
-  indexDataSprite[3] = 1;
-  indexDataSprite[4] = 3;
-  indexDataSprite[5] = 2;
-
-
 
   bool useMonsterBall = true;
   bool texture = true;
@@ -1605,8 +1590,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       // RootSignatureを設定。PSOに設定しているけど別途設定が必要
       commandList->SetGraphicsRootSignature(rootSignature);
       commandList->SetPipelineState(graphicsPipelineState); // PSOを設定
-      commandList->IASetVertexBuffers(0, 1, &vertexBufferView); // VBVを設定
-      commandList->IASetIndexBuffer(&indexBufferViewSprite); // IBVを設定
+      commandList->IASetVertexBuffers(0, 1, &sphereVertexBufferView); // VBVを設定
+      commandList->IASetIndexBuffer(&sphereBufferView); // IBVを設定
       // 形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけばいい
       commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -1625,8 +1610,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
       // 描画！(DrawCall/ドローコール)。3頂点で1つのインスタンスについては今後
-      commandList->DrawInstanced(kSphereVertexNum, 1, 0, 0);
-      commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+      //commandList->DrawInstanced(kSphereVertexNum, 1, 0, 0);
+      commandList->DrawIndexedInstanced(kSphereIndexNum, 1, 0, 0, 0);
 
       commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 
@@ -1736,6 +1721,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   vertexResourceSprite->Release();
   indexResourceSprite->Release();
   transformationMatrixResourceSprite->Release();
+  sphereIndexResource->Release();
 
 
   device->Release();
