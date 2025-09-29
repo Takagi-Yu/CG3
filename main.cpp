@@ -1342,68 +1342,48 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // 頂点リソースを作る
   ID3D12Resource *modelVertexResource = CreateBufferResource(
       device, sizeof(VertexData) * modelData.vertices.size());
+  // 1頂点当たりのサイズ
+  D3D12_VERTEX_BUFFER_VIEW modelVertexBufferView{};
+  modelVertexBufferView.StrideInBytes = sizeof(VertexData);
+  modelVertexBufferView.BufferLocation = modelVertexResource->GetGPUVirtualAddress(); // リソースの先頭のアドレスから使う
+  modelVertexBufferView.SizeInBytes =
+      UINT(sizeof(VertexData) * modelData.vertices.size()); // 使用するリソースのサイズは頂点のサイズ
+  modelVertexBufferView.StrideInBytes = sizeof(VertexData); // 1頂点当たりのサイズ
+
+  VertexData *modelVertexData = nullptr;
+   modelVertexResource->Map(0, nullptr, reinterpret_cast<void **>(&modelVertexData)); // 書き込むためのアドレスを取得
+
+  std::memcpy(modelVertexData, modelData.vertices.data(),
+              sizeof(VertexData) * modelData.vertices.size()); // 頂点リソースにコピー
+
+
+
+
+
+
+
+
+
+  // 頂点リソースにデータを書き込む
+  // =======
+  // 球
+  // =======
+
+
+  VertexData *sphereVertexData = nullptr;
+  sphereVertexResource->Map(0, nullptr, reinterpret_cast<void **>(&sphereVertexData)); // 書き込むためのアドレスを取得
   // 頂点バッファビューを作成する
   D3D12_VERTEX_BUFFER_VIEW sphereVertexBufferView{};
   // リソースの先頭のアドレスから使う
   sphereVertexBufferView.BufferLocation = sphereVertexResource->GetGPUVirtualAddress();
   // 使用するリソースのサイズは頂点3つ分のサイズ
   sphereVertexBufferView.SizeInBytes = sizeof(VertexData) * kSphereVertexNum;
-  // 1頂点当たりのサイズ
-  sphereVertexBufferView.StrideInBytes = sizeof(VertexData);
-  D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
-  vertexBufferView.BufferLocation = modelVertexResource->GetGPUVirtualAddress(); // リソースの先頭のアドレスから使う
-  vertexBufferView.SizeInBytes =
-      UINT(sizeof(VertexData) * modelData.vertices.size()); // 使用するリソースのサイズは頂点のサイズ
-  vertexBufferView.StrideInBytes = sizeof(VertexData); // 1頂点当たりのサイズ
+  // 経度分割1つ分の角度
+  const float kLonEvery = 2.0f * M_PI / float(kSubdivision);
+  // 緯度分割1つ分の角度
+  const float kLatEvery = M_PI / float(kSubdivision);
 
-  // 頂点リソースにデータを書き込む
-  VertexData *vertexData = nullptr;
-  modelVertexResource->Map(0, nullptr, reinterpret_cast<void **>(&vertexData)); // 書き込むためのアドレスを取得
-  std::memcpy(vertexData, modelData.vertices.data(),
-              sizeof(VertexData) * modelData.vertices.size()); // 頂点リソースにコピー
-  // =======
-  // 球
-  // =======
-  
-  //ID3D12Resource *vertexResource =
-  //    CreateBufferResource(device, sizeof(VertexData) * kSphereVertexNum);
-  //
-  //// 頂点バッファビューを作成する
-  //D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
-  //// リソースの先頭のアドレスから使う
-  //vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
-  //// 使用するリソースのサイズは頂点3つ分のサイズ
-  //vertexBufferView.SizeInBytes = sizeof(VertexData) * kSphereVertexNum;
-  //// 1頂点当たりのサイズ
-  //vertexBufferView.StrideInBytes = sizeof(VertexData);
-  //
-  //// 頂点リソースにデータを書き込む
-  //VertexData *vertexData = nullptr;
-  //// 書き込むためのアドレスを取得
-  //vertexResource->Map(0, nullptr, reinterpret_cast<void **>(&vertexData));
-
-  //// 左下
-  //vertexData[0].position = {-0.5f, -0.5f, 0.0f, 1.0f};
-  //vertexData[0].texcoord = {0.0f, 1.0f};
-  //// 上
-  //vertexData[1].position = {0.0f, 0.5f, 0.0f, 1.0f};
-  //vertexData[1].texcoord = {0.5f, 0.0f};
-  //// 右下
-  //vertexData[2].position = {0.5f, -0.5f, 0.0f, 1.0f};
-  //vertexData[2].texcoord = {1.0f, 1.0f};
-
-  // // 左下2
-  //vertexData[3].position = {-0.5f, -0.5f, 0.5f, 1.0f};
-  //vertexData[3].texcoord = {0.0f, 1.0f};
-  //// 上2
-  //vertexData[4].position = {0.0f, 0.0f, 0.0f, 1.0f};
-  //vertexData[4].texcoord = {0.5f, 0.0f};
-  //// 右下2
-  //vertexData[5].position = {0.5f, -0.5f, -0.5f, 1.0f};
-  //vertexData[5].texcoord = {1.0f, 1.0f};
-
-
-  for (uint32_t latIndex = 0; latIndex < kSubdivision+1; ++latIndex) {
+  for (uint32_t latIndex = 0; latIndex < kSubdivision + 1; ++latIndex) {
     // 緯度(南北)
     float lat = -M_PI / 2.0f + kLatEvery * latIndex;
     float nextLat = lat + kLatEvery;
@@ -1411,27 +1391,27 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     float v0 = 1.0f - float(latIndex) / float(kSubdivision);
     float v1 = 1.0f - float(latIndex + 1) / float(kSubdivision);
     // 経度の方向に分割しながら線を引く
-    for (uint32_t lonIndex = 0; lonIndex < kSubdivision+1; ++lonIndex) {
-      uint32_t start = (latIndex * (kSubdivision +1)+ lonIndex) ;
+    for (uint32_t lonIndex = 0; lonIndex < kSubdivision + 1; ++lonIndex) {
+      uint32_t start = (latIndex * (kSubdivision + 1) + lonIndex);
       // 経度(東西)
       float lon = lonIndex * kLonEvery; // 現在
       float nextLon = lon + kLonEvery;  // 次
 
-  //  float v0 = 1.0f - float(latIndex) / float(kSubdivision);
-  //  float v1 = 1.0f - float(latIndex + 1) / float(kSubdivision);
-  //  // 経度の方向に分割しながら線を引く
-  //  for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex) {
-  //    uint32_t start = (latIndex * kSubdivision + lonIndex) * 6;
-  //    // 経度
-  //    float lon = lonIndex * kLonEvery; // 現在
-  //    float nextLon = lon + kLonEvery;  // 次
+      float u0 = float(lonIndex) / float(kSubdivision);
+      float u1 = float(lonIndex + 1) / float(kSubdivision);
 
-  //    float u0 = float(lonIndex) / float(kSubdivision);
-  //    float u1 = float(lonIndex + 1) / float(kSubdivision);
+      VertexData vertA{};
+      vertA.position = {cos(lat) * cos(lon), sin(lat), cos(lat) * sin(lon),
+                        1.0f};
+      vertA.texcoord = {u0, v0};
+      vertA.normal = {
+          vertA.position.x,
+          vertA.position.y,
+          vertA.position.z,
+      };
 
       // 頂点にデータを入力する。基準点a
-      vertexData[start + 0] = vertA;
-      
+      sphereVertexData[start + 0] = vertA;
     }
   }
 
@@ -1724,7 +1704,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f,
                         10.0f);
       ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
-      ImGui::SliderAngle("rotate", &transform.rotate.y);
+      ImGui::DragFloat3("objScale", &transform.scale.x, 0.01f);
+      ImGui::DragFloat3("objRotate", &transform.rotate.x, 0.01f);
+      ImGui::DragFloat3("objTranslate", &transform.translate.x, 0.01f);
+      ImGui::DragFloat2("SpriteTranlate", &transformSprite.translate.x, 1.0f,
+                        0.0f);
       ImGui::End();
       // 開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
       ImGui::ShowDemoWindow();
@@ -1777,11 +1761,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       commandList->SetGraphicsRootConstantBufferView(
           3, directionalLightResource->GetGPUVirtualAddress());
 
-
+      commandList->IASetVertexBuffers(0, 1, &modelVertexBufferView); // VBVを設定
+//
       // 描画！(DrawCall/ドローコール)。3頂点で1つのインスタンスについては今後
       //commandList->DrawInstanced(kSphereVertexNum, 1, 0, 0);
-      commandList->DrawIndexedInstanced(kSphereIndexNum, 1, 0, 0, 0);
+      //commandList->DrawIndexedInstanced(kSphereIndexNum, 1, 0, 0, 0);
       //commandList->DrawInstanced(kSphereVertexNum, 1, 0, 0);
+      
+      
+      
       commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
       //commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 
@@ -1794,7 +1782,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // VBVを設定
       commandList->SetGraphicsRootConstantBufferView(
           1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
-     // commandList->DrawInstanced(6, texture, 0, 0);
+      commandList->DrawInstanced(6, texture, 0, 0);
 
 
       // 実際のcommandListのImGuiの描画コマンドを積む
