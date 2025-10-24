@@ -1239,8 +1239,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       D3D12_COLOR_WRITE_ENABLE_ALL;
   blendDesc.RenderTarget[0].BlendEnable = TRUE;
   blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-  blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_REV_SUBTRACT;
-  blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+  blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+  blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
   blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
   blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
   blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
@@ -1291,7 +1291,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // depthの機能を有効化する
   depthStencilDesc.DepthEnable = true;
   // 書き込みします
-  depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+  depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
   // 比較関数はLessEqual。つまり、近ければ描画される
   depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
@@ -1346,7 +1346,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       CreateBufferResource(device, sizeof(VertexData) * kSphereVertexNum);
 
   // モデル読み込み
-  ModelData modelData = LoadObjFile("Resources", "axis.obj");
+  ModelData modelData = LoadObjFile("Resources", "fence.obj");
   // 頂点リソースを作る
   ID3D12Resource *modelVertexResource = CreateBufferResource(
       device, sizeof(VertexData) * modelData.vertices.size());
@@ -1529,7 +1529,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   Transform transform{
       {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
   Transform cameraTransform{
-      {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -5.0f}};
+      {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -10.0f}};
   Transform transformSprite{
       {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
 
@@ -1549,7 +1549,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
   // Textureを読んで転送する
-  DirectX::ScratchImage mipImages = LoadTexture("resources/uvChecker.png");
+  DirectX::ScratchImage mipImages = LoadTexture("resources/fence.png");
   const DirectX::TexMetadata &metadata = mipImages.GetMetadata();
   ID3D12Resource *textureResource = CreateTextureResource(device, metadata);
   ID3D12Resource *intermediateResource =
@@ -1792,7 +1792,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // VBVを設定
       commandList->SetGraphicsRootConstantBufferView(
           1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
-      commandList->DrawInstanced(6, texture, 0, 0);
+      //commandList->DrawInstanced(6, texture, 0, 0);
 
 
       // 実際のcommandListのImGuiの描画コマンドを積む

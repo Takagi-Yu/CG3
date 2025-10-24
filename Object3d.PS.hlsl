@@ -34,6 +34,16 @@ PixelShaderOutput main(VertexShaderOutput input)
     PixelShaderOutput output;
     output.color = gMaterial.color * textureColor;
     
+    if (textureColor.a == 0.0)
+    {
+        discard;
+    }
+    
+    if (output.color.a == 0.0)
+    {
+        discard;
+    }
+    
     if (gMaterial.enableLighting != 0)
     {
         float NdotL = dot(normalize(input.normal), -gDirectionalLight.direction);
