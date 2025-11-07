@@ -1081,7 +1081,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   descriptorRange[0].OffsetInDescriptorsFromTableStart =
       D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND; // offsetを自動計算
 
-  
   D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
   staticSamplers[0].Filter =
       D3D12_FILTER_MIN_MAG_MIP_LINEAR; // バイリニアフィルタ
@@ -1256,12 +1255,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
   // Shaderをコンパイルする
   IDxcBlob *vertexShaderBlob =
-      CompileShader(L"Object3D.VS.hlsl", L"vs_6_0", dxcUtils, dxcCompiler,
+      CompileShader(L"Resources/shaders/Object3D.VS.hlsl", L"vs_6_0", dxcUtils, dxcCompiler,
                     includeHandler, logStream);
   assert(vertexShaderBlob != nullptr);
 
   IDxcBlob *pixelShaderBlob =
-      CompileShader(L"Object3D.PS.hlsl", L"ps_6_0", dxcUtils, dxcCompiler,
+      CompileShader(L"Resources/shaders/Object3D.PS.hlsl", L"ps_6_0", dxcUtils, dxcCompiler,
                     includeHandler, logStream);
   assert(pixelShaderBlob != nullptr);
 
