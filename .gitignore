@@ -16,19 +16,13 @@
 # Mono auto generated filesmono_crash.*
 
 # Build results
-#[Dd]ebug/
-[Dd]ebugPublic/
-#[Rr]elease/
-[Rr]eleases/
 x64/
 x86/
-[Aa][Rr][Mm]/
-[Aa][Rr][Mm]64/
-bld/
 [Bb]in/
-#[Oo]bj/
-[Ll]og/
+[0o]bj/
+[Ll]0g/
 [Ll]ogs/
+generated/
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
@@ -64,16 +58,11 @@ artifacts/
 StyleCopReport.xml
 
 # Files built by Visual Studio
-*_i.c
-*_p.c
+*_i.C
+*_p.C
 *_h.h
 *.ilk
 *.meta
-[Dd]bug/.obj
-[Dd]ebug/.obj
-[Dd]ebugPublic/.obj
-[Rr]elease/.obj
-[Rr]eleases/.obj
 *.iobj
 *.pch
 *.pdb
