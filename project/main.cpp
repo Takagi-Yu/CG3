@@ -24,6 +24,8 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd,
 #include "externals/DirectXTex/d3dx12.h"
 #include <vector>
 
+#include "Input.h"
+
 #define M_PI 3.141592f  
 
 #pragma comment(lib, "d3d12.lib")
@@ -1628,7 +1630,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   device->CreateShaderResourceView(textureResource2, &srvDesc2,
                                    textureSrvHandleCPU2);
 
+  Input *input = nullptr;
 
+  input = new Input();
+  input->Initialize(w.hInstance,hwnd);
 
   bool useMonsterBall = true;
   bool texture = true;
@@ -1700,6 +1705,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       uvTransformMatrix = Multiply(
           uvTransformMatrix, MakeTranslateMatrix(uvTransformSprite.translate));
       materialDataSprite->uvTransform = uvTransformMatrix;
+
+      input->update();
 
 
       ImGui::Begin("MaterialColor");
@@ -1904,7 +1911,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     debug->Release();
   }
 
-
+  delete input;
 
   return 0;
 }
