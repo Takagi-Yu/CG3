@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <windows.h>
 #include <wrl.h>
 using namespace Microsoft::WRL;
@@ -14,7 +14,7 @@ public:
   void update();
 
 private:
-  // ƒL[ƒ{[ƒh‚ÌƒfƒoƒCƒX
+  // ã‚­ãƒ¼ãƒœãƒ¼ãƒ‰ã®ãƒ‡ãƒã‚¤ã‚¹
   ComPtr<IDirectInputDevice8> keyboard;
 
 };

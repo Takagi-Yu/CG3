@@ -1633,10 +1633,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   Input *input = nullptr;
 
   input = new Input();
-  input->Initialize(w.hInstance,hwnd);
+  input->Initialize(wc.hInstance, hwnd);
 
   bool useMonsterBall = true;
-  bool texture = true;
+  //bool texture = true;
 
 
   MSG msg{};
@@ -1712,7 +1712,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       ImGui::Begin("MaterialColor");
       ImGui::ColorEdit4("Color", &(*materialData).color.x);
       ImGui::Checkbox("useMonsterBall", &useMonsterBall);
-      ImGui::Checkbox("texture", &texture);
+      //ImGui::Checkbox("texture", &texture);
       ImGui::DragFloat2("UVTranslate", &uvTransformSprite.translate.x, 0.01f,
                         -10.0f, 10.0f);
       ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f,
@@ -1797,7 +1797,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // VBVを設定
       commandList->SetGraphicsRootConstantBufferView(
           1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
-      commandList->DrawInstanced(6, texture, 0, 0);
+      //commandList->DrawInstanced(6, texture, 0, 0);
 
 
       // 実際のcommandListのImGuiの描画コマンドを積む
