@@ -1707,7 +1707,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       materialDataSprite->uvTransform = uvTransformMatrix;
 
       input->update();
-
+      if (input->PushKey(DIK_0)) {
+        OutputDebugStringA("Hit 0\n");
+      }
 
       ImGui::Begin("MaterialColor");
       ImGui::ColorEdit4("Color", &(*materialData).color.x);

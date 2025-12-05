@@ -13,8 +13,12 @@ public:
   void Initialize(HINSTANCE hInstance,HWND hwnd);
   void update();
 
+  bool PushKey(BYTE keyNumber);
+
 private:
   // キーボードのデバイス
   ComPtr<IDirectInputDevice8> keyboard;
+
+  BYTE key[256] = {};
 
 };
