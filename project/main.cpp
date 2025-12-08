@@ -23,8 +23,6 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd,
 #include "externals/DirectXTex/DirectXTex.h"
 #include "externals/DirectXTex/d3dx12.h"
 #include <vector>
-//#define DIRECTINPUT_VERSION 0x0800  // DirectInputのバージョン
-//#include <dinput.h>
 
 #include "Input.h"
 
@@ -35,8 +33,6 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd,
 #pragma comment(lib, "Dbghelp.lib")
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "dxcompiler.lib")
-//#pragma comment(lib, "dinput8.lib")
-//#pragma comment(lib, "dxguid.lib")
 
 struct Vector2 {
   float x;
