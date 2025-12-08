@@ -31,9 +31,14 @@ void Input::update() {
 
 bool Input::PushKey(BYTE keyNumber) { 
     // 指定キーを押していればtrueに返す
-  if (key[keyNumber]) {
+  if (keyPre[keyNumber]) {
       return true;
   }
 
     return false; 
+}
+
+bool Input::Trigger(BYTE kayNumber)
+{
+    return false;
 }

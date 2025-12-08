@@ -23,6 +23,8 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd,
 #include "externals/DirectXTex/DirectXTex.h"
 #include "externals/DirectXTex/d3dx12.h"
 #include <vector>
+#define DIRECTINPUT_VERSION 0x0800  // DirectInputのバージョン
+#include <dinput.h>
 
 #include "Input.h"
 
@@ -33,6 +35,8 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd,
 #pragma comment(lib, "Dbghelp.lib")
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "dxcompiler.lib")
+#pragma comment(lib, "dinput8.lib")
+#pragma comment(lib, "dxguid.lib")
 
 struct Vector2 {
   float x;
@@ -981,6 +985,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // コマンドリストの生成がうまくいかなかったので起動できない
   assert(SUCCEEDED(hr));
 
+  IDirectInput8* directInput = nullptr;
+  HRESULT result = DirectInput8Create(wc.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&directInput, nullptr);
+  assert(SUCCEEDED(result));
+
+  IDirectInputDevice8* keyboard = nullptr;
+  result = directInput->CreateDevice(GUID_SysKeyboard, &keyboard, NULL);
+  assert(SUCCEEDED(result));
+
+  result = keyboard->SetDataFormat(&c_dfDIKeyboard);
+  assert(SUCCEEDED(result));
+
+  result = keyboard->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
+  assert(SUCCEEDED(result));
+
   // スワップチェーンを生成する
   IDXGISwapChain4 *swapChain = nullptr;
   DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
@@ -1654,6 +1672,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       // これから書き込むバックバッファのインデックスを取得
       UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
 
+      keyboard->Acquire();
+      BYTE key[256] = {};
+      keyboard->GetDeviceState(sizeof(key), key);
+
+      if (key[DIK_0]) {
+          OutputDebugStringA("Hit 0\n");
+      }
+
       // TransitionBarrierの設定
       D3D12_RESOURCE_BARRIER barrier{};
       // 今回のバリアはTransition
@@ -1707,7 +1733,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       materialDataSprite->uvTransform = uvTransformMatrix;
 
       input->update();
-      if (input->PushKey(DIK_0)) {
+      if (input->PushKey(DIK_SPACE)) {
         OutputDebugStringA("Hit 0\n");
       }
 
@@ -1868,9 +1894,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
   useAdapter->Release();
   dxgiFactory->Release();
-  #ifdef _DEBUG
-  debugController->Release();
-  #endif 
 
   srvDescriptorHeap->Release();
   dxcUtils->Release();

@@ -14,11 +14,12 @@ public:
   void update();
 
   bool PushKey(BYTE keyNumber);
+  bool Trigger(BYTE kayNumber);
 
 private:
   // キーボードのデバイス
   ComPtr<IDirectInputDevice8> keyboard;
 
-  BYTE key[256] = {};
+  BYTE keyPre[256] = {};
 
 };
