@@ -23,6 +23,10 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd,
 #include "externals/DirectXTex/DirectXTex.h"
 #include "externals/DirectXTex/d3dx12.h"
 #include <vector>
+//#define DIRECTINPUT_VERSION 0x0800  // DirectInputのバージョン
+//#include <dinput.h>
+
+#include "Input.h"
 
 #define M_PI 3.141592f  
 
@@ -31,6 +35,8 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd,
 #pragma comment(lib, "Dbghelp.lib")
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "dxcompiler.lib")
+//#pragma comment(lib, "dinput8.lib")
+//#pragma comment(lib, "dxguid.lib")
 
 struct Vector2 {
   float x;
@@ -979,6 +985,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // コマンドリストの生成がうまくいかなかったので起動できない
   assert(SUCCEEDED(hr));
 
+  //IDirectInput8* directInput = nullptr;
+  //HRESULT result = DirectInput8Create(wc.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&directInput, nullptr);
+  //assert(SUCCEEDED(result));
+
+  //IDirectInputDevice8* keyboard = nullptr;
+  //result = directInput->CreateDevice(GUID_SysKeyboard, &keyboard, NULL);
+  //assert(SUCCEEDED(result));
+
+  //result = keyboard->SetDataFormat(&c_dfDIKeyboard);
+  //assert(SUCCEEDED(result));
+
+  //result = keyboard->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
+  //assert(SUCCEEDED(result));
+
   // スワップチェーンを生成する
   IDXGISwapChain4 *swapChain = nullptr;
   DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
@@ -1628,10 +1648,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   device->CreateShaderResourceView(textureResource2, &srvDesc2,
                                    textureSrvHandleCPU2);
 
+  Input *input = nullptr;
 
+  input = new Input();
+  input->Initialize(wc.hInstance, hwnd);
 
   bool useMonsterBall = true;
-  bool texture = true;
+  //bool texture = true;
 
 
   MSG msg{};
@@ -1648,6 +1671,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       // ゲームの処理
       // これから書き込むバックバッファのインデックスを取得
       UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
+
+      //keyboard->Acquire();
+      //BYTE key[256] = {};
+      //keyboard->GetDeviceState(sizeof(key), key);
+
+      input->update();
+      if (input->PushKey(DIK_1)) {
+          OutputDebugStringA("Hit 1\n");
+      }
+      if (input->TriggerKey(DIK_0)) {
+          OutputDebugStringA("Hit 0\n");
+      }
 
       // TransitionBarrierの設定
       D3D12_RESOURCE_BARRIER barrier{};
@@ -1701,11 +1736,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
           uvTransformMatrix, MakeTranslateMatrix(uvTransformSprite.translate));
       materialDataSprite->uvTransform = uvTransformMatrix;
 
-
       ImGui::Begin("MaterialColor");
       ImGui::ColorEdit4("Color", &(*materialData).color.x);
       ImGui::Checkbox("useMonsterBall", &useMonsterBall);
-      ImGui::Checkbox("texture", &texture);
+      //ImGui::Checkbox("texture", &texture);
       ImGui::DragFloat2("UVTranslate", &uvTransformSprite.translate.x, 0.01f,
                         -10.0f, 10.0f);
       ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f,
@@ -1722,7 +1756,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       ImGui::ShowDemoWindow();
       // ImGuiの内部コマンドを生成する
       ImGui::Render();
-
 
 
 
@@ -1790,7 +1823,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // VBVを設定
       commandList->SetGraphicsRootConstantBufferView(
           1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
-      commandList->DrawInstanced(6, texture, 0, 0);
+      //commandList->DrawInstanced(6, texture, 0, 0);
 
 
       // 実際のcommandListのImGuiの描画コマンドを積む
@@ -1859,9 +1892,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
   useAdapter->Release();
   dxgiFactory->Release();
-  #ifdef _DEBUG
-  debugController->Release();
-  #endif 
 
   srvDescriptorHeap->Release();
   dxcUtils->Release();
@@ -1904,7 +1934,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     debug->Release();
   }
 
-
+  delete input;
 
   return 0;
 }
