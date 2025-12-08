@@ -985,20 +985,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // コマンドリストの生成がうまくいかなかったので起動できない
   assert(SUCCEEDED(hr));
 
-  //IDirectInput8* directInput = nullptr;
-  //HRESULT result = DirectInput8Create(wc.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&directInput, nullptr);
-  //assert(SUCCEEDED(result));
-
-  //IDirectInputDevice8* keyboard = nullptr;
-  //result = directInput->CreateDevice(GUID_SysKeyboard, &keyboard, NULL);
-  //assert(SUCCEEDED(result));
-
-  //result = keyboard->SetDataFormat(&c_dfDIKeyboard);
-  //assert(SUCCEEDED(result));
-
-  //result = keyboard->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
-  //assert(SUCCEEDED(result));
-
   // スワップチェーンを生成する
   IDXGISwapChain4 *swapChain = nullptr;
   DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
@@ -1671,10 +1657,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       // ゲームの処理
       // これから書き込むバックバッファのインデックスを取得
       UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
-
-      //keyboard->Acquire();
-      //BYTE key[256] = {};
-      //keyboard->GetDeviceState(sizeof(key), key);
 
       input->update();
       if (input->PushKey(DIK_1)) {
