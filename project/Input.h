@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "WinApp.h"
 #include <windows.h>
 #include <wrl.h>
 using namespace Microsoft::WRL;
@@ -10,17 +11,19 @@ class Input {
 public:
 	template <class T> using ComPtr = Microsoft::WRL::ComPtr<T>;
 
-  void Initialize(HINSTANCE hInstance,HWND hwnd);
+  void Initialize(WinApp* winApp);
   void update();
 
   bool PushKey(BYTE keyNumber);
   bool TriggerKey(BYTE keyNumber);
 
 private:
-  // キーボードのデバイス
-  ComPtr<IDirectInputDevice8> devkeyboard;
+	WinApp *winApp_ = nullptr;
 
-  BYTE key[256] = {};
-  BYTE keyPre[256] = {};
+  // キーボードのデバイス
+  ComPtr<IDirectInputDevice8> devkeyboard_;
+
+  BYTE key_[256] = {};
+  BYTE keyPre_[256] = {};
 
 };
