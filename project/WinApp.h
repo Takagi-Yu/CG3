@@ -17,6 +17,8 @@ public:
 	HWND GetHwnd()const { return hwnd_; }
 	HINSTANCE GetHInstance()const { return wc_.hInstance; }
 
+	bool ProcessMessage();
+
 public: // 定数
 
 	static const int32_t kClientWidth_ = 1280;
