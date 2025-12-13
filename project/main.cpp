@@ -5,9 +5,9 @@
 #include <format>
 #include <fstream>
 #include <string>
-#include <d3d12.h>
-#include <dxgi1_6.h>
-#include <cassert>
+//#include <d3d12.h>
+//#include <dxgi1_6.h>
+//#include <cassert>
 #include <DbgHelp.h>
 #include <strsafe.h>
 #include <dxgidebug.h>
@@ -26,11 +26,12 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd,
 
 #include "Input.h"
 #include "WinApp.h"
+#include "DirectXCommon.h"
 
 #define M_PI 3.141592f  
 
-#pragma comment(lib, "d3d12.lib")
-#pragma comment(lib, "dxgi.lib")
+//#pragma comment(lib, "d3d12.lib")
+//#pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "Dbghelp.lib")
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "dxcompiler.lib")
@@ -830,48 +831,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	std::ofstream logStream(logFilePath);
 
-	//WNDCLASS wc{};
-	//// ウィンドウプロシージャ
-	//wc.lpfnWndProc = WindowProc;
-	//// うウィンドウクラス名
-	//wc.lpszClassName = L"CG2WindowClass";
-	//// インスタンスハンドル
-	//wc.hInstance = GetModuleHandle(nullptr);
-	//// カーソル
-	//wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
-
-	//// ウィンドウクラスを登録する
-	//RegisterClass(&wc);
-
-	//// クライアント領域のサイズ
-	//const int32_t kClientWidth = 1280;
-	//const int32_t kClientheight = 720;
-
-	//// ウィンドウサイズを表す構造体にクライアント領域を入れる
-	//RECT wrc = {0, 0, kClientWidth, kClientheight};
-
-	//// クライアント領域を元に実際のサイズにwrcに変更してもらう
-	//AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
-
-	//// ウィンドウの生成
-	//HWND hwnd = CreateWindow(wc.lpszClassName, // 利用するクラス
-	//                         L"CG2",           // タイトルバーの文字
-	//                         WS_OVERLAPPEDWINDOW, // よく見るウィンドウスタイル
-	//                         CW_USEDEFAULT, // 表示X座標(Windowsに任せる)
-	//                         CW_USEDEFAULT, // 表示Y座標(WindowOSに任せる)
-	//                         wrc.right - wrc.left, // ウィンドウ横幅
-	//                         wrc.bottom - wrc.top, // ウィンドウ縦幅
-	//                         nullptr,      // 親ウィンドウハンドル
-	//                         nullptr,      // メニューハンドル
-	//                         wc.hInstance, // インスタンスハンドル
-	//                         nullptr);     // オプション
-
-	//// ウィンドウを表示する
-	//ShowWindow(hwnd, SW_SHOW);
-
 	WinApp *winApp = nullptr;
 	winApp = new WinApp();
 	winApp->Initialize();
+
+	DirectXCommon *dxCommon = nullptr;
+	dxCommon = new DirectXCommon();
+	dxCommon->Initialize();
 
 	// DXGIファクトリーの生成
 	IDXGIFactory7 *dxgiFactory = nullptr;
@@ -1920,6 +1886,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	delete input;
 	delete winApp;
+	delete dxCommon;
 
 	return 0;
 }
