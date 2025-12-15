@@ -12,5 +12,7 @@ public: // ƒƒ“ƒoŠÖ”
 public: // ƒƒ“ƒo•Ï”
 	IDXGIFactory7 *dxgiFactory_ = nullptr;
 
+	Microsoft::WRL::ComPtr<ID3D12Device> device_;
+
 };
 

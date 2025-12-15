@@ -1,5 +1,6 @@
 ﻿#include <Windows.h>
 #include <stdint.h>
+#include "externals/imgui/imgui.h"
 
 #pragma once
 class WinApp
