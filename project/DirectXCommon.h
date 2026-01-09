@@ -1,18 +1,30 @@
-#pragma once
+Ôªø#pragma once
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <wrl.h>
+#include "WinApp.h"
 
 class DirectXCommon
 {
-public: // ÉÅÉìÉoä÷êî
-	void Initialize();
-	void DeviceInitialize();
+public: // „É°„É≥„ÉêÈñ¢Êï∞
+	void Initialize(WinApp* winApp);
+	void DeviceInitialize(Microsoft::WRL::ComPtr<ID3D12Device> device_, Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory_);
+	void CommandInitialize();
+	void SwapchainInitialize();
+	void depthBufferInitialize();
 
-public: // ÉÅÉìÉoïœêî
-	IDXGIFactory7 *dxgiFactory_ = nullptr;
+public: // „É°„É≥„ÉêÂ§âÊï∞
+	WinApp* winApp_ = nullptr;
 
 	Microsoft::WRL::ComPtr<ID3D12Device> device_;
+
+	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory_;
+
+	ID3D12CommandAllocator* commandAllocator_ = nullptr;
+	ID3D12GraphicsCommandList* commandList_ = nullptr;
+	ID3D12CommandQueue* commandQueue_ = nullptr;
+
+	IDXGISwapChain4* swapChain_ = nullptr;
 
 };
 

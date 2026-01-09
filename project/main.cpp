@@ -27,6 +27,8 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd,
 #include "Input.h"
 #include "WinApp.h"
 #include "DirectXCommon.h"
+//#include "Logger.h"
+//#include "StringUnility.h"
 
 #define M_PI 3.141592f  
 
@@ -837,7 +839,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	DirectXCommon *dxCommon = nullptr;
 	dxCommon = new DirectXCommon();
-	dxCommon->Initialize();
+	dxCommon->Initialize(winApp);
+
+	ID3D12Device* device = nullptr;
+	IDXGIFactory7* dxgiFactory = nullptr;
+
+	dxCommon->DeviceInitialize(device, dxgiFactory);
 
 	// DXGIファクトリーの生成
 	IDXGIFactory7 *dxgiFactory = nullptr;
@@ -882,7 +889,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	}
 #endif
 
-	ID3D12Device *device = nullptr;
+	//ID3D12Device *device = nullptr;
 	// 機能レベルとログ出力用の文字列
 	D3D_FEATURE_LEVEL featureLevels[] = {
 		D3D_FEATURE_LEVEL_12_2, D3D_FEATURE_LEVEL_12_1, D3D_FEATURE_LEVEL_12_0 };
