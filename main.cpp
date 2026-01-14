@@ -1610,7 +1610,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
   // Textureを読んで転送する
-  DirectX::ScratchImage mipImages = LoadTexture("resources/fence.png");
+  DirectX::ScratchImage mipImages = LoadTexture("resources/uvChecker.png");
   const DirectX::TexMetadata &metadata = mipImages.GetMetadata();
   ID3D12Resource *textureResource = CreateTextureResource(device, metadata);
   ID3D12Resource *intermediateResource =
@@ -1881,18 +1881,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       //commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
       //commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
       commandList->SetGraphicsRootDescriptorTable(1, instancingSrvHandleGPU);
+
+      commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
+
       commandList->DrawInstanced(UINT(modelData.vertices.size()),
                                    kNumInstance, 0, 0);
 
-      commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
-      
       // マテリアルCBufferの場所を設定
-      commandList->SetGraphicsRootConstantBufferView(
-          0, materialResourceSprite->GetGPUVirtualAddress());
+      //commandList->SetGraphicsRootConstantBufferView(
+      //    0, materialResourceSprite->GetGPUVirtualAddress());
 
-      commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // VBVを設定
-      commandList->SetGraphicsRootConstantBufferView(
-          1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
+      //commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // VBVを設定
+      //commandList->SetGraphicsRootConstantBufferView(
+      //    1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
       //commandList->DrawInstanced(6, texture, 0, 0);
 
 
