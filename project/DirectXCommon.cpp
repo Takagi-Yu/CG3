@@ -144,7 +144,37 @@ void DirectXCommon::CommandInitialize()
 
 }
 
-void DirectXCommon::SwapchainInitialize()
+void DirectXCommon::RenderTargetviewInitialize()
+{
+	HRESULT hr;
+
+	swapChainResources_[2] = { nullptr };
+	hr = swapChain_->GetBuffer(0, IID_PPV_ARGS(&swapChainResources_[0]));
+	assert(SUCCEEDED(hr));
+	hr = swapChain_->GetBuffer(1, IID_PPV_ARGS(&swapChainResources_[1]));
+	assert(SUCCEEDED(hr));
+
+	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
+	rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+	// ディスクリプタの戦闘を取得する
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvStartHandle =
+		rtvHeap_->GetCPUDescriptorHandleForHeapStart();
+	// RTVを2つ作るのでディスクリプタを2つ用意
+	// まず1つ目を作る。1つ目は最初のところに作る。作る場所をこちらで指定してあげる必要がある
+	rtvHandles_[0] = rtvStartHandle;
+	device_->CreateRenderTargetView(swapChainResources_[0], &rtvDesc,
+		rtvHandles_[0]);
+	// 2つ目のディスクリプタハンドルを得る(自力で)
+	rtvHandles_[1].ptr =
+		rtvHandles_[0].ptr +
+		device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	// 2つ目を作る
+	device_->CreateRenderTargetView(swapChainResources_[1], &rtvDesc,
+		rtvHandles_[1]);
+}
+
+void DirectXCommon::CreateSwapchain()
 {
 	HRESULT hr;
 
@@ -168,7 +198,102 @@ void DirectXCommon::SwapchainInitialize()
 	assert(SUCCEEDED(hr));
 }
 
-void DirectXCommon::depthBufferInitialize()
+void DirectXCommon::CreateDepthBuffer()
 {
+	// Resource
+	D3D12_RESOURCE_DESC resourceDesc{};
+	resourceDesc.Width = width_;
+	resourceDesc.Height = height_;
+	resourceDesc.MipLevels = 1;
+	resourceDesc.DepthOrArraySize = 1;
+	resourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
+	// Heap
+	D3D12_HEAP_PROPERTIES heapProperties{};
+	heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+	// Clear
+	D3D12_CLEAR_VALUE depthClearValue{};
+	depthClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	depthClearValue.DepthStencil.Depth = 1.0f;
+	depthClearValue.DepthStencil.Stencil = 0;
+
+	// Resource生成
+	HRESULT hr = device_->CreateCommittedResource(
+		&heapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc,
+		D3D12_RESOURCE_STATE_DEPTH_WRITE,
+		&depthClearValue,
+		IID_PPV_ARGS(&depthStencilResource_));
+	assert(SUCCEEDED(hr));
+}
+
+void DirectXCommon::CreateDescriptorHeap()
+{
+	HRESULT hr;
+
+	// RTV用
+	rtvDescriptorSize_ =
+		device_->GetDescriptorHandleIncrementSize(
+			D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+	// DSV用
+	dsvDescriptorSize_ =
+		device_->GetDescriptorHandleIncrementSize(
+			D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+
+	// SRV用
+	srvDescriptorSize_ =
+		device_->GetDescriptorHandleIncrementSize(
+			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	// RTV Heap
+	D3D12_DESCRIPTOR_HEAP_DESC rtvDesc{};
+	rtvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	rtvDesc.NumDescriptors = 2; // バックバッファ数
+	rtvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	hr = device_->CreateDescriptorHeap(
+		&rtvDesc, IID_PPV_ARGS(&rtvHeap_));
+	assert(SUCCEEDED(hr));
+
+	// DSV Heap
+	D3D12_DESCRIPTOR_HEAP_DESC dsvDesc{};
+	dsvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	dsvDesc.NumDescriptors = 1; // 深度バッファ
+	dsvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	hr = device_->CreateDescriptorHeap(
+		&dsvDesc, IID_PPV_ARGS(&dsvHeap_));
+	assert(SUCCEEDED(hr));
+
+	// SRV Heap
+	D3D12_DESCRIPTOR_HEAP_DESC srvDesc{};
+	srvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	srvDesc.NumDescriptors = 128; // SRV数
+	srvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+
+	hr = device_->CreateDescriptorHeap(
+		&srvDesc, IID_PPV_ARGS(&srvHeap_));
+	assert(SUCCEEDED(hr));
+}
+
+Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible)
+{
+	ID3D12DescriptorHeap* descriptorHeap = nullptr;
+	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
+	descriptorHeapDesc.Type = heapType;
+	descriptorHeapDesc.NumDescriptors = numDescriptors;
+	descriptorHeapDesc.Flags = shaderVisible
+		? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE
+		: D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	HRESULT hr = device_->CreateDescriptorHeap(&descriptorHeapDesc,
+		IID_PPV_ARGS(&descriptorHeap));
+	assert(SUCCEEDED(hr));
+	return descriptorHeap;
+	return Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>();
 }

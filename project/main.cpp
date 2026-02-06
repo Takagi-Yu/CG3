@@ -687,7 +687,7 @@ ID3D12Resource *CreateDepthStencilTextureResource(ID3D12Device *device,
 	// 利用するHeapの設定
 	D3D12_HEAP_PROPERTIES heapProperties{};
 	heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT; // VRAM上に作る
-
+	
 	// 深度値のクリア
 	D3D12_CLEAR_VALUE depthClearValue{};
 	depthClearValue.DepthStencil.Depth = 1.0f;
