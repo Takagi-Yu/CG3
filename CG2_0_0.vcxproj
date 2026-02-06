@@ -64,6 +64,7 @@
     <None Include="Object3d.hlsli" />
     <None Include="Particle.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </None>
   </ItemGroup>
   <PropertyGroup Label="Globals">

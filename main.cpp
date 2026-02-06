@@ -1317,12 +1317,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
   // Shaderをコンパイルする
   IDxcBlob *vertexShaderBlob =
-      CompileShader(L"Particle.VS.hlsl", L"vs_6_0", dxcUtils, dxcCompiler,
+      CompileShader(L"Object3D.VS.hlsl", L"vs_6_0", dxcUtils, dxcCompiler,
                     includeHandler, logStream);
   assert(vertexShaderBlob != nullptr);
 
   IDxcBlob *pixelShaderBlob =
-      CompileShader(L"Particle.PS.hlsl", L"ps_6_0", dxcUtils, dxcCompiler,
+      CompileShader(L"Object3D.PS.hlsl", L"ps_6_0", dxcUtils, dxcCompiler,
                     includeHandler, logStream);
   assert(pixelShaderBlob != nullptr);
 
@@ -1387,6 +1387,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
   // 実際に頂点リソースを作る
   // ID3D12Resource* vertexResource = nullptr;
+  ID3D12Resource *vertexResource =
+      CreateBufferResource(device, sizeof(VertexData) * kSphereVertexNum);
+  // hr = device->CreateCommittedResource(
+  //     &uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc,
+  //     D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
+  //     IID_PPV_ARGS(&vertexResource));
+  // assert(SUCCEEDED(hr));
+
+   // 頂点バッファビューを作成する
+  D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
+  // リソースの先頭のアドレスから使う
+  vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
+  // 使用するリソースのサイズは頂点3つ分のサイズ
+  vertexBufferView.SizeInBytes = sizeof(VertexData) * kSphereVertexNum;
+  // 1頂点当たりのサイズ
+  vertexBufferView.StrideInBytes = sizeof(VertexData);
 
   ID3D12Resource *sphereIndexResource =
       CreateBufferResource(device, sizeof(uint32_t) * kSphereIndexNum);
@@ -1671,7 +1687,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
 
-  
+  //
   // DescriptorSizeを取得しておく
   const uint32_t descriptorSizeSRV = device->GetDescriptorHandleIncrementSize(
       D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -1691,28 +1707,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                                    textureSrvHandleCPU2);
 
 
-  D3D12_SHADER_RESOURCE_VIEW_DESC instancingSrvDesc{};
-  instancingSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
-  instancingSrvDesc.Shader4ComponentMapping =
-      D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-  instancingSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-  instancingSrvDesc.Buffer.FirstElement = 0;
-  instancingSrvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-  instancingSrvDesc.Buffer.NumElements = kNumInstance;
-  instancingSrvDesc.Buffer.StructureByteStride = sizeof(TransformationMatrix);
-  D3D12_CPU_DESCRIPTOR_HANDLE instancingSrvHandleCPU =
-      GetCPUDescriptorHandle(srvDescriptorHeap, descriptorSizeSRV, 3);
-  D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU =
-      GetGPUDescriptorHandle(srvDescriptorHeap, descriptorSizeSRV, 3);
-  device->CreateShaderResourceView(instancingResource.Get(), &instancingSrvDesc,
-                                   instancingSrvHandleCPU);
+  //D3D12_SHADER_RESOURCE_VIEW_DESC instancingSrvDesc{};
+  //instancingSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
+  //instancingSrvDesc.Shader4ComponentMapping =
+  //    D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+  //instancingSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+  //instancingSrvDesc.Buffer.FirstElement = 0;
+  //instancingSrvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+  //instancingSrvDesc.Buffer.NumElements = kNumInstance;
+  //instancingSrvDesc.Buffer.StructureByteStride = sizeof(TransformationMatrix);
+  //D3D12_CPU_DESCRIPTOR_HANDLE instancingSrvHandleCPU =
+  //    GetCPUDescriptorHandle(srvDescriptorHeap, descriptorSizeSRV, 3);
+  //D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU =
+  //    GetGPUDescriptorHandle(srvDescriptorHeap, descriptorSizeSRV, 3);
+  //device->CreateShaderResourceView(instancingResource.Get(), &instancingSrvDesc,
+  //                                 instancingSrvHandleCPU);
 
-  Transform transforms[kNumInstance];
-  for (uint32_t index = 0; index < kNumInstance; ++index) {
-    transforms[index].scale = {1.0f, 1.0f, 1.0f};
-    transforms[index].rotate = {0.0f, 0.0f, 0.0f};
-    transforms[index].translate = {index * 0.1f, index * 0.1f, index * 0.1f};
-  }
+  //Transform transforms[kNumInstance];
+  //for (uint32_t index = 0; index < kNumInstance; ++index) {
+  //  transforms[index].scale = {1.0f, 1.0f, 1.0f};
+  //  transforms[index].rotate = {0.0f, 0.0f, 0.0f};
+  //  transforms[index].translate = {index * 0.1f, index * 0.1f, index * 0.1f};
+  //}
 
 
 
@@ -1770,15 +1786,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
       Matrix4x4 viewProjectionMatrix1 = Multiply(viewMatrix, projectionMatrix);
 
-      for (uint32_t index = 0; index < kNumInstance; ++index) {
-        Matrix4x4 worldMatrix1 =
-            MakeAffineMatrix(transforms[index].scale, transforms[index].rotate,
-                             transforms[index].translate);
-        Matrix4x4 worldViewProjectionMatrix1 =
-            Multiply(worldMatrix1, viewProjectionMatrix1);
-        instancingData[index].WVP = worldViewProjectionMatrix1;
-        instancingData[index].World = worldMatrix1;
-      }
+      //for (uint32_t index = 0; index < kNumInstance; ++index) {
+      //  Matrix4x4 worldMatrix1 =
+      //      MakeAffineMatrix(transforms[index].scale, transforms[index].rotate,
+      //                       transforms[index].translate);
+      //  Matrix4x4 worldViewProjectionMatrix1 =
+      //      Multiply(worldMatrix1, viewProjectionMatrix1);
+      //  instancingData[index].WVP = worldViewProjectionMatrix1;
+      //  instancingData[index].World = worldMatrix1;
+      //}
 
       // Sprite用のWorldProjectionMatrixを作る
       Matrix4x4 worldMatrixSprite =
@@ -1827,7 +1843,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 
-
       // 描画先のRTVとDSVを設定する
       D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle =
           dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
@@ -1860,41 +1875,41 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       commandList->SetGraphicsRootConstantBufferView(
           0, materialResource->GetGPUVirtualAddress());
       // wvp用のCBufferの場所を設定
-      //commandList->SetGraphicsRootConstantBufferView(
-      //    1, wvpResource->GetGPUVirtualAddress());
+      commandList->SetGraphicsRootConstantBufferView(
+          1, wvpResource->GetGPUVirtualAddress());
 
       // SRVのDescriptorTableの先頭を設定。2はrootParamater[2]である
       commandList->SetGraphicsRootDescriptorTable(2, useMonsterBall ? textureSrvHandleGPU2 : textureSrvHandleGPU);
 
       commandList->SetGraphicsRootConstantBufferView(
           3, directionalLightResource->GetGPUVirtualAddress());
-
-      commandList->IASetVertexBuffers(0, 1, &modelVertexBufferView); // VBVを設定
 //
-      // 描画！(DrawCall/ドローコール)。3頂点で1つのインスタンスについては今後
-      //commandList->DrawInstanced(kSphereVertexNum, 1, 0, 0);
-      //commandList->DrawIndexedInstanced(kSphereIndexNum, 1, 0, 0, 0);
-      //commandList->DrawInstanced(kSphereVertexNum, 1, 0, 0);
-      
-      
-      
-      //commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
-      //commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
-      commandList->SetGraphicsRootDescriptorTable(1, instancingSrvHandleGPU);
+//      commandList->IASetVertexBuffers(0, 1, &modelVertexBufferView); // VBVを設定
+ 
+//      // 描画！(DrawCall/ドローコール)。3頂点で1つのインスタンスについては今後
+      commandList->DrawInstanced(kSphereVertexNum, 1, 0, 0);
+//      //commandList->DrawIndexedInstanced(kSphereIndexNum, 1, 0, 0, 0);
+//      //commandList->DrawInstanced(kSphereVertexNum, 1, 0, 0);
+//      
+//      
+//      
+//      //commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
+//      //commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+//      commandList->SetGraphicsRootDescriptorTable(1, instancingSrvHandleGPU);
 
       commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 
-      commandList->DrawInstanced(UINT(modelData.vertices.size()),
-                                   kNumInstance, 0, 0);
+//      commandList->DrawInstanced(UINT(modelData.vertices.size()),
+//                                   kNumInstance, 0, 0);
 
-      // マテリアルCBufferの場所を設定
-      //commandList->SetGraphicsRootConstantBufferView(
-      //    0, materialResourceSprite->GetGPUVirtualAddress());
+       //マテリアルCBufferの場所を設定
+      commandList->SetGraphicsRootConstantBufferView(
+          0, materialResourceSprite->GetGPUVirtualAddress());
 
-      //commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // VBVを設定
-      //commandList->SetGraphicsRootConstantBufferView(
-      //    1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
-      //commandList->DrawInstanced(6, texture, 0, 0);
+      commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // VBVを設定
+      commandList->SetGraphicsRootConstantBufferView(
+          1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
+      commandList->DrawInstanced(6, texture, 0, 0);
 
 
       // 実際のcommandListのImGuiの描画コマンドを積む
