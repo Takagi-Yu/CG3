@@ -1463,6 +1463,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   sphereVertexBufferView.BufferLocation = sphereVertexResource->GetGPUVirtualAddress();
   // 使用するリソースのサイズは頂点3つ分のサイズ
   sphereVertexBufferView.SizeInBytes = sizeof(VertexData) * kSphereVertexNum;
+  // 1頂点当たりのサイズ
+  sphereVertexBufferView.StrideInBytes = sizeof(VertexData);
   // 経度分割1つ分の角度
   const float kLonEvery = 2.0f * M_PI / float(kSubdivision);
   // 緯度分割1つ分の角度
