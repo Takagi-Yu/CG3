@@ -1,7 +1,7 @@
 ﻿#include "DirectXCommon.h"
+#include <d3d12.h>
 #include <cassert>
 #include <format>
-#include <windows.h>
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -11,6 +11,19 @@ using namespace Microsoft::WRL;
 void DirectXCommon::Initialize(WinApp* winApp) {
 	assert(winApp);
 	this->winApp_ = winApp;
+
+	DeviceInitialize(device_, dxgiFactory_);
+	CommandInitialize();
+	CreateSwapchain();
+	CreateDepthBuffer();
+	CreateDescriptorHeap();
+	RenderTargetviewInitialize();
+	DepthStencilViewInitialize();
+	FenceInitialize();
+	ViewportInitialize();
+	ScissorRectInitialize();
+	DXCcompilerInitialize();
+	ImGuiInitialize();
 }
 
 void DirectXCommon::DeviceInitialize(Microsoft::WRL::ComPtr<ID3D12Device> device_, Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory_)
@@ -144,36 +157,6 @@ void DirectXCommon::CommandInitialize()
 
 }
 
-void DirectXCommon::RenderTargetviewInitialize()
-{
-	HRESULT hr;
-
-	swapChainResources_[2] = { nullptr };
-	hr = swapChain_->GetBuffer(0, IID_PPV_ARGS(&swapChainResources_[0]));
-	assert(SUCCEEDED(hr));
-	hr = swapChain_->GetBuffer(1, IID_PPV_ARGS(&swapChainResources_[1]));
-	assert(SUCCEEDED(hr));
-
-	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
-	rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-	// ディスクリプタの戦闘を取得する
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvStartHandle =
-		rtvHeap_->GetCPUDescriptorHandleForHeapStart();
-	// RTVを2つ作るのでディスクリプタを2つ用意
-	// まず1つ目を作る。1つ目は最初のところに作る。作る場所をこちらで指定してあげる必要がある
-	rtvHandles_[0] = rtvStartHandle;
-	device_->CreateRenderTargetView(swapChainResources_[0], &rtvDesc,
-		rtvHandles_[0]);
-	// 2つ目のディスクリプタハンドルを得る(自力で)
-	rtvHandles_[1].ptr =
-		rtvHandles_[0].ptr +
-		device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	// 2つ目を作る
-	device_->CreateRenderTargetView(swapChainResources_[1], &rtvDesc,
-		rtvHandles_[1]);
-}
-
 void DirectXCommon::CreateSwapchain()
 {
 	HRESULT hr;
@@ -282,6 +265,120 @@ void DirectXCommon::CreateDescriptorHeap()
 	assert(SUCCEEDED(hr));
 }
 
+void DirectXCommon::RenderTargetviewInitialize()
+{
+	HRESULT hr;
+
+	swapChainResources_[2] = { nullptr };
+	hr = swapChain_->GetBuffer(0, IID_PPV_ARGS(&swapChainResources_[0]));
+	assert(SUCCEEDED(hr));
+	hr = swapChain_->GetBuffer(1, IID_PPV_ARGS(&swapChainResources_[1]));
+	assert(SUCCEEDED(hr));
+
+	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
+	rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+	// ディスクリプタの戦闘を取得する
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvStartHandle =
+		rtvHeap_->GetCPUDescriptorHandleForHeapStart();
+	// RTVを2つ作るのでディスクリプタを2つ用意
+	// まず1つ目を作る。1つ目は最初のところに作る。作る場所をこちらで指定してあげる必要がある
+	rtvHandles_[0] = rtvStartHandle;
+	device_->CreateRenderTargetView(swapChainResources_[0], &rtvDesc,
+		rtvHandles_[0]);
+	// 2つ目のディスクリプタハンドルを得る(自力で)
+	rtvHandles_[1].ptr =
+		rtvHandles_[0].ptr +
+		device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	// 2つ目を作る
+	device_->CreateRenderTargetView(swapChainResources_[1], &rtvDesc,
+		rtvHandles_[1]);
+}
+
+void DirectXCommon::DepthStencilViewInitialize()
+{
+
+	// DSVの設定
+	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
+	dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; // Format。基本的にはResourceに合わせる
+	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D; // 2DTexture
+	// DSVHeapの先頭にDSVを作る
+	device_->CreateDepthStencilView(
+		depthStencilResource_, &dsvDesc,
+		dsvHeap_->GetCPUDescriptorHandleForHeapStart());
+}
+
+void DirectXCommon::FenceInitialize()
+{
+	HRESULT hr;
+
+	// 初期値0でFenceを作る
+	ID3D12Fence *fence = nullptr;
+	uint64_t fenceValue = 0;
+	hr = device_->CreateFence(fenceValue, D3D12_FENCE_FLAG_NONE,
+		IID_PPV_ARGS(&fence));
+	assert(SUCCEEDED(hr));
+
+	// FenceのSignalを待つためのイベントを作成する
+	HANDLE fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	assert(fenceEvent != nullptr);
+
+}
+
+void DirectXCommon::ViewportInitialize()
+{
+	// クライアント領域のサイズと一緒にして画面全体に表示
+	viewport_.Width = WinApp::kClientWidth_;
+	viewport_.Height = WinApp::kClientHeight_;
+	viewport_.TopLeftX = 0;
+	viewport_.TopLeftY = 0;
+	viewport_.MinDepth = 0.0f;
+	viewport_.MaxDepth = 1.0f;
+
+}
+
+void DirectXCommon::ScissorRectInitialize()
+{
+	scissorRect_.left = 0;
+	scissorRect_.right = WinApp::kClientWidth_;
+	scissorRect_.top = 0;
+	scissorRect_.bottom = WinApp::kClientHeight_;
+}
+
+void DirectXCommon::DXCcompilerInitialize()
+{
+	HRESULT hr;
+
+	hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils_));
+	assert(SUCCEEDED(hr));
+	hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&dxcCompiler_));
+	assert(SUCCEEDED(hr));
+
+	hr = dxcUtils_->CreateDefaultIncludeHandler(&includeHandler_);
+	assert(SUCCEEDED(hr));
+}
+
+void DirectXCommon::ImGuiInitialize()
+{
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui::StyleColorsDark();
+
+	ImGui_ImplWin32_Init(winApp_->GetHwnd());
+
+	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
+	swapChain_->GetDesc1(&swapChainDesc);
+
+	ImGui_ImplDX12_Init(
+		device_.Get(),                         // ID3D12Device*
+		swapChainDesc.BufferCount,             // バックバッファ数
+		DXGI_FORMAT_R8G8B8A8_UNORM,             // RTVフォーマット（元 rtvDesc.Format）
+		srvHeap_,                              // SRV DescriptorHeap
+		srvHeap_->GetCPUDescriptorHandleForHeapStart(),
+		srvHeap_->GetGPUDescriptorHandleForHeapStart()
+	);
+}
+
 Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible)
 {
 	ID3D12DescriptorHeap* descriptorHeap = nullptr;
@@ -296,4 +393,9 @@ Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap
 	assert(SUCCEEDED(hr));
 	return descriptorHeap;
 	return Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>();
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetSRVCPUDescriptorHandle(uint32_t index)
+{
+	return GetCPUDescriptorHandle(srvHeap_, srvDescriptorSize_, index);
 }

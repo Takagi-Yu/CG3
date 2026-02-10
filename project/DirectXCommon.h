@@ -1,8 +1,8 @@
 ﻿#pragma once
-#include <d3d12.h>
 #include <dxgi1_6.h>
 #include <wrl.h>
 #include "WinApp.h"
+#include <dxcapi.h>
 
 class DirectXCommon
 {
@@ -10,15 +10,31 @@ public: // メンバ関数
 	void Initialize(WinApp* winApp);
 	void DeviceInitialize(Microsoft::WRL::ComPtr<ID3D12Device> device_, Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory_);
 	void CommandInitialize();
-	void RenderTargetviewInitialize();
-
 	void CreateSwapchain();
 	void CreateDepthBuffer();
 	void CreateDescriptorHeap();
+	void RenderTargetviewInitialize();
+	void DepthStencilViewInitialize();
+	void FenceInitialize();
+	void ViewportInitialize();
+	void ScissorRectInitialize();
+	void DXCcompilerInitialize();
+	void ImGuiInitialize();
+
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
+	static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(
+		const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> &descriptorHeap, uint32_t descriptorSize, uint32_t index);
+	static D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(
+		const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> &descriptorHeap, uint32_t descriptorSize, uint32_t index);
 
-public: // メンバ変数
+	D3D12_CPU_DESCRIPTOR_HANDLE GetSRVCPUDescriptorHandle(uint32_t index);
+	D3D12_GPU_DESCRIPTOR_HANDLE GetSRVGPUDescriptorHandle(uint32_t index);
+
+	
+	//std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, 2> *swapChainResources_;
+
+private: // メンバ変数
 	WinApp* winApp_ = nullptr;
 
 	Microsoft::WRL::ComPtr<ID3D12Device> device_;
@@ -46,6 +62,13 @@ public: // メンバ変数
 
 	ID3D12Resource* swapChainResources_[2];
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles_[2];
+
+	D3D12_VIEWPORT viewport_{};
+	D3D12_RECT scissorRect_{};
+
+	IDxcUtils *dxcUtils_ = nullptr;
+	IDxcCompiler3 *dxcCompiler_ = nullptr;
+	IDxcIncludeHandler *includeHandler_ = nullptr;
 
 };
 
