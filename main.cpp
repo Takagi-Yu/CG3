@@ -1138,37 +1138,37 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   descriptionRootSignature.pStaticSamplers = staticSamplers;
   descriptionRootSignature.NumStaticSamplers = _countof(staticSamplers);
 
-  D3D12_DESCRIPTOR_RANGE descriptorRangeForInstancing[1] = {};
-  descriptorRangeForInstancing[0].BaseShaderRegister = 0;
-  descriptorRangeForInstancing[0].NumDescriptors = 1;
-  descriptorRangeForInstancing[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-  descriptorRangeForInstancing[0].OffsetInDescriptorsFromTableStart =
-      D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+  //D3D12_DESCRIPTOR_RANGE descriptorRangeForInstancing[1] = {};
+  //descriptorRangeForInstancing[0].BaseShaderRegister = 0;
+  //descriptorRangeForInstancing[0].NumDescriptors = 1;
+  //descriptorRangeForInstancing[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+  //descriptorRangeForInstancing[0].OffsetInDescriptorsFromTableStart =
+  //    D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
   // RootParamater作成。複数設定できるので配列。今回は結果1つだけなので長さ1の配列
-  D3D12_ROOT_PARAMETER rootParameters[4] = {};
+  D3D12_ROOT_PARAMETER rootParameters[3] = {};
   rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // CBVを使う
   rootParameters[0].ShaderVisibility =
       D3D12_SHADER_VISIBILITY_PIXEL; // PixelShaderで使う
   rootParameters[0].Descriptor.ShaderRegister = 0; // レジスタ番号0を使う
 
-  rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // CBVを使う
+  rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // CBVを使う
   rootParameters[1].ShaderVisibility =
       D3D12_SHADER_VISIBILITY_VERTEX; // PixelShaderで使う
   rootParameters[1].Descriptor.ShaderRegister = 0; // レジスタ番号0を使う
-  rootParameters[1].DescriptorTable.pDescriptorRanges =
-      descriptorRangeForInstancing; // Tableの中身を配列を指定
-  rootParameters[1].DescriptorTable.NumDescriptorRanges =
-      _countof(descriptorRangeForInstancing); // Tableで利用する数
+  //rootParameters[1].DescriptorTable.pDescriptorRanges =
+  //    descriptorRangeForInstancing; // Tableの中身を配列を指定
+  //rootParameters[1].DescriptorTable.NumDescriptorRanges =
+  //    _countof(descriptorRangeForInstancing); // Tableで利用する数
 
   rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // DescriptorTableを使う
   rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // PixelShaderで使う
   rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange; // Tableの中身の配列を指定
   rootParameters[2].DescriptorTable.NumDescriptorRanges =
       _countof(descriptorRange); // Tableで利用する数
-  rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // CBVを使う
-  rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // PixelShaderで使う
-  rootParameters[3].Descriptor.ShaderRegister = 1; // レジスタ番号1を使う
+  //rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // CBVを使う
+  //rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // PixelShaderで使う
+  //rootParameters[3].Descriptor.ShaderRegister = 1; // レジスタ番号1を使う
 
   descriptionRootSignature.pParameters =
       rootParameters; // ルートパラメータ配列へのポインタ
@@ -1465,63 +1465,153 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   sphereVertexBufferView.SizeInBytes = sizeof(VertexData) * kSphereVertexNum;
   // 1頂点当たりのサイズ
   sphereVertexBufferView.StrideInBytes = sizeof(VertexData);
+
+  // 頂点リソースにデータを書き込む
+  VertexData *vertexData = nullptr;
+  // 書き込むためのアドレスを取得
+  vertexResource->Map(0, nullptr, reinterpret_cast<void **>(&vertexData));
+
+  // 左下
+  vertexData[0].position = { -0.5f, -0.5f, 0.0f, 1.0f };
+  vertexData[0].texcoord = { 0.0f, 1.0f };
+  // 上
+  vertexData[1].position = { 0.0f, 0.5f, 0.0f, 1.0f };
+  vertexData[1].texcoord = { 0.5f, 0.0f };
+  // 右下
+  vertexData[2].position = { 0.5f, -0.5f, 0.0f, 1.0f };
+  vertexData[2].texcoord = { 1.0f, 1.0f };
+
+  // 左下2
+  vertexData[3].position = { -0.5f, -0.5f, 0.5f, 1.0f };
+  vertexData[3].texcoord = { 0.0f, 1.0f };
+  // 上2
+  vertexData[4].position = { 0.0f, 0.0f, 0.0f, 1.0f };
+  vertexData[4].texcoord = { 0.5f, 0.0f };
+  // 右下2
+  vertexData[5].position = { 0.5f, -0.5f, -0.5f, 1.0f };
+  vertexData[5].texcoord = { 1.0f, 1.0f };
+
   // 経度分割1つ分の角度
   const float kLonEvery = 2.0f * M_PI / float(kSubdivision);
   // 緯度分割1つ分の角度
   const float kLatEvery = M_PI / float(kSubdivision);
 
-  for (uint32_t latIndex = 0; latIndex < kSubdivision + 1; ++latIndex) {
-    // 緯度(南北)
-    float lat = -M_PI / 2.0f + kLatEvery * latIndex;
-    float nextLat = lat + kLatEvery;
+  //for (uint32_t latIndex = 0; latIndex < kSubdivision + 1; ++latIndex) {
+  //  // 緯度(南北)
+  //  float lat = -M_PI / 2.0f + kLatEvery * latIndex;
+  //  float nextLat = lat + kLatEvery;
+  //
+  //  float v0 = 1.0f - float(latIndex) / float(kSubdivision);
+  //  float v1 = 1.0f - float(latIndex + 1) / float(kSubdivision);
+  //  // 経度の方向に分割しながら線を引く
+  //  for (uint32_t lonIndex = 0; lonIndex < kSubdivision + 1; ++lonIndex) {
+  //    uint32_t start = (latIndex * (kSubdivision + 1) + lonIndex);
+  //    // 経度(東西)
+  //    float lon = lonIndex * kLonEvery; // 現在
+  //    float nextLon = lon + kLonEvery;  // 次
+  //
+  //    float u0 = float(lonIndex) / float(kSubdivision);
+  //    float u1 = float(lonIndex + 1) / float(kSubdivision);
+  //
+  //    VertexData vertA{};
+  //    vertA.position = {cos(lat) * cos(lon), sin(lat), cos(lat) * sin(lon),
+  //                      1.0f};
+  //    vertA.texcoord = {u0, v0};
+  //    vertA.normal = {
+  //        vertA.position.x,
+  //        vertA.position.y,
+  //        vertA.position.z,
+  //    };
+  //
+  //    // 頂点にデータを入力する。基準点a
+  //    sphereVertexData[start + 0] = vertA;
+  //  }
+  //}
+  //
+  //for (uint32_t latIndex = 0; latIndex < kSubdivision ; ++latIndex) {
+  //  for (uint32_t lonIndex = 0; lonIndex < kSubdivision ; ++lonIndex) {
+  //    uint32_t start = (latIndex * kSubdivision + lonIndex) * 6;
+  //
+  //    uint32_t lb =
+  //        latIndex * (kSubdivision + 1) + lonIndex; // 左下のインデックス
+  //    uint32_t rb = lb + 1;                         // 右下のインデックス
+  //    uint32_t lt =
+  //        (latIndex + 1) * (kSubdivision + 1) + lonIndex; // 左上のインデックス
+  //    uint32_t rt = lt + 1;                               // 右上のインデックス
+  //
+  //
+  //
+  //    sphereIndexData[start + 0] = lb;
+  //    sphereIndexData[start + 1] = lt;
+  //    sphereIndexData[start + 2] = rb;
+  //    sphereIndexData[start + 3] = rb;
+  //    sphereIndexData[start + 4] = lt;
+  //    sphereIndexData[start + 5] = rt;
+  //  }
+  //}
 
-    float v0 = 1.0f - float(latIndex) / float(kSubdivision);
-    float v1 = 1.0f - float(latIndex + 1) / float(kSubdivision);
-    // 経度の方向に分割しながら線を引く
-    for (uint32_t lonIndex = 0; lonIndex < kSubdivision + 1; ++lonIndex) {
-      uint32_t start = (latIndex * (kSubdivision + 1) + lonIndex);
-      // 経度(東西)
-      float lon = lonIndex * kLonEvery; // 現在
-      float nextLon = lon + kLonEvery;  // 次
+  for (uint32_t latIndex = 0; latIndex < kSubdivision; ++latIndex) {
+      // 緯度
+      float lat = -M_PI / 2.0f + kLatEvery * latIndex;
+      float nextLat = lat + kLatEvery;
 
-      float u0 = float(lonIndex) / float(kSubdivision);
-      float u1 = float(lonIndex + 1) / float(kSubdivision);
+      float v0 = 1.0f - float(latIndex) / float(kSubdivision);
+      float v1 = 1.0f - float(latIndex + 1) / float(kSubdivision);
+      // 経度の方向に分割しながら線を引く
+      for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex) {
+          uint32_t start = (latIndex * kSubdivision + lonIndex) * 6;
+          // 経度
+          float lon = lonIndex * kLonEvery; // 現在
+          float nextLon = lon + kLonEvery;  // 次
 
-      VertexData vertA{};
-      vertA.position = {cos(lat) * cos(lon), sin(lat), cos(lat) * sin(lon),
-                        1.0f};
-      vertA.texcoord = {u0, v0};
-      vertA.normal = {
-          vertA.position.x,
-          vertA.position.y,
-          vertA.position.z,
-      };
+          float u0 = float(lonIndex) / float(kSubdivision);
+          float u1 = float(lonIndex + 1) / float(kSubdivision);
 
-      // 頂点にデータを入力する。基準点a
-      sphereVertexData[start + 0] = vertA;
-    }
-  }
+          VertexData vertA{};
+          vertA.position = {
+              cos(lat) * cos(lon),
+              sin(lat),
+              cos(lat) * sin(lon),
+              1.0f
+          };
+          vertA.texcoord = { u0, v0 };
 
-  for (uint32_t latIndex = 0; latIndex < kSubdivision ; ++latIndex) {
-    for (uint32_t lonIndex = 0; lonIndex < kSubdivision ; ++lonIndex) {
-      uint32_t start = (latIndex * kSubdivision + lonIndex) * 6;
+          VertexData vertB{};
+          vertB.position = {
+              cos(nextLat) * cos(lon),
+              sin(nextLat),
+              cos(nextLat) * sin(lon),
+              1.0f
+          };
+          vertB.texcoord = { u0, v1 };
 
-      uint32_t lb =
-          latIndex * (kSubdivision + 1) + lonIndex; // 左下のインデックス
-      uint32_t rb = lb + 1;                         // 右下のインデックス
-      uint32_t lt =
-          (latIndex + 1) * (kSubdivision + 1) + lonIndex; // 左上のインデックス
-      uint32_t rt = lt + 1;                               // 右上のインデックス
+          VertexData vertC{};
+          vertC.position = {
+              cos(lat) * cos(nextLon),
+              sin(lat),
+              cos(lat) * sin(nextLon),
+              1.0f
+          };
+          vertC.texcoord = { u1, v0 };
 
+          VertexData vertD{};
+          vertD.position = {
+              cos(nextLat) * cos(nextLon),
+              sin(nextLat),
+              cos(nextLat) * sin(nextLon),
+              1.0f
+          };
+          vertD.texcoord = { u1, v1 };
 
+          // 頂点にデータを入力する。基準点a
+          vertexData[start + 0] = vertA;
+          vertexData[start + 1] = vertB;
+          vertexData[start + 2] = vertC;
 
-      sphereIndexData[start + 0] = lb;
-      sphereIndexData[start + 1] = lt;
-      sphereIndexData[start + 2] = rb;
-      sphereIndexData[start + 3] = rb;
-      sphereIndexData[start + 4] = lt;
-      sphereIndexData[start + 5] = rt;
-    }
+          vertexData[start + 3] = vertD;
+          vertexData[start + 4] = vertC;
+          vertexData[start + 5] = vertB;
+      }
   }
 
   // Sprite用の頂点リソースを作る
@@ -1689,7 +1779,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
 
-  //
+  
   // DescriptorSizeを取得しておく
   const uint32_t descriptorSizeSRV = device->GetDescriptorHandleIncrementSize(
       D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -1704,7 +1794,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       GetCPUDescriptorHandle(srvDescriptorHeap, descriptorSizeSRV, 2);
   D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU2 =
       GetGPUDescriptorHandle(srvDescriptorHeap, descriptorSizeSRV, 2);
-  // SRVの生成
+   //SRVの生成
   device->CreateShaderResourceView(textureResource2, &srvDesc2,
                                    textureSrvHandleCPU2);
 
