@@ -1388,7 +1388,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // 実際に頂点リソースを作る
   // ID3D12Resource* vertexResource = nullptr;
   ID3D12Resource *vertexResource =
-      CreateBufferResource(device, sizeof(VertexData) * kSphereVertexNum);
+      CreateBufferResource(device, sizeof(VertexData) * kSphereIndexNum);
   // hr = device->CreateCommittedResource(
   //     &uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc,
   //     D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
@@ -1400,7 +1400,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // リソースの先頭のアドレスから使う
   vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
   // 使用するリソースのサイズは頂点3つ分のサイズ
-  vertexBufferView.SizeInBytes = sizeof(VertexData) * kSphereVertexNum;
+  vertexBufferView.SizeInBytes = sizeof(VertexData) * kSphereIndexNum;
   // 1頂点当たりのサイズ
   vertexBufferView.StrideInBytes = sizeof(VertexData);
 
@@ -1420,7 +1420,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
   ID3D12Resource *sphereVertexResource =
-      CreateBufferResource(device, sizeof(VertexData) * kSphereVertexNum);
+      CreateBufferResource(device, sizeof(VertexData) * kSphereIndexNum);
 
   // モデル読み込み
   ModelData modelData = LoadObjFile("Resources", "plane.obj");
@@ -1462,7 +1462,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // リソースの先頭のアドレスから使う
   sphereVertexBufferView.BufferLocation = sphereVertexResource->GetGPUVirtualAddress();
   // 使用するリソースのサイズは頂点3つ分のサイズ
-  sphereVertexBufferView.SizeInBytes = sizeof(VertexData) * kSphereVertexNum;
+  sphereVertexBufferView.SizeInBytes = sizeof(VertexData) * kSphereIndexNum;
   // 1頂点当たりのサイズ
   sphereVertexBufferView.StrideInBytes = sizeof(VertexData);
 
@@ -1979,7 +1979,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 //      commandList->IASetVertexBuffers(0, 1, &modelVertexBufferView); // VBVを設定
  
 //      // 描画！(DrawCall/ドローコール)。3頂点で1つのインスタンスについては今後
-      commandList->DrawInstanced(kSphereVertexNum, 1, 0, 0);
+      commandList->DrawInstanced(kSphereIndexNum, 1, 0, 0);
 //      //commandList->DrawIndexedInstanced(kSphereIndexNum, 1, 0, 0, 0);
 //      //commandList->DrawInstanced(kSphereVertexNum, 1, 0, 0);
 //      
