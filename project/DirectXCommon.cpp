@@ -1,5 +1,4 @@
 ﻿#include "DirectXCommon.h"
-#include <d3d12.h>
 #include <cassert>
 #include <format>
 
@@ -26,9 +25,11 @@ void DirectXCommon::Initialize(WinApp* winApp) {
 	ImGuiInitialize();
 }
 
-void DirectXCommon::DeviceInitialize(Microsoft::WRL::ComPtr<ID3D12Device> device_, Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory_)
+void DirectXCommon::DeviceInitialize(Microsoft::WRL::ComPtr<ID3D12Device> device, Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory)
 {
 	HRESULT hr;
+
+	device_ = device;
 
 #ifdef _DEBUG
 
@@ -393,6 +394,26 @@ Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap
 	assert(SUCCEEDED(hr));
 	return descriptorHeap;
 	return Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>();
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetCPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> &descriptorHeap, uint32_t descriptorSize, uint32_t index)
+{
+	D3D12_CPU_DESCRIPTOR_HANDLE handleCPU =
+		descriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	handleCPU.ptr += (descriptorSize * index);
+	return handleCPU;
+
+	//return D3D12_CPU_DESCRIPTOR_HANDLE();
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetGPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> &descriptorHeap, uint32_t descriptorSize, uint32_t index)
+{
+	D3D12_GPU_DESCRIPTOR_HANDLE handleGPU =
+		descriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	handleGPU.ptr += (descriptorSize * index);
+	return handleGPU;
+
+	//return D3D12_GPU_DESCRIPTOR_HANDLE();
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetSRVCPUDescriptorHandle(uint32_t index)

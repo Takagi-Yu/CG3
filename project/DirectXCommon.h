@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <d3d12.h>
 #include <dxgi1_6.h>
 #include <wrl.h>
 #include "WinApp.h"
@@ -8,7 +9,7 @@ class DirectXCommon
 {
 public: // メンバ関数
 	void Initialize(WinApp* winApp);
-	void DeviceInitialize(Microsoft::WRL::ComPtr<ID3D12Device> device_, Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory_);
+	void DeviceInitialize(Microsoft::WRL::ComPtr<ID3D12Device> device, Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory);
 	void CommandInitialize();
 	void CreateSwapchain();
 	void CreateDepthBuffer();
@@ -47,8 +48,8 @@ private: // メンバ変数
 
 	IDXGISwapChain4* swapChain_ = nullptr;
 
-	int32_t width_ = 0;
-	int32_t height_ = 0;
+	int32_t width_ = 1280;
+	int32_t height_ = 720;
 
 	ID3D12Resource* depthStencilResource_ = nullptr;
 
