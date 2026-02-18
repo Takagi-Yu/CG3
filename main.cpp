@@ -75,6 +75,7 @@ struct Material {
   int32_t enableLighting;
   float padding[3];
   Matrix4x4 uvTransform;
+  float shininess;
 };
 
 struct TransformationMatrix {
@@ -95,6 +96,10 @@ struct MaterialData {
 struct ModelData {
   std::vector<VertexData> vertices;
   MaterialData material;
+};
+
+struct CameraForGPU {
+    Vector3 worldPosition;
 };
 
 Matrix4x4 MakeIdentity4x4() {
@@ -975,12 +980,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   #ifdef _DEBUG
   ID3D12InfoQueue *infoQueue = nullptr;
   if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(&infoQueue)))) {
-    // やばいエラー時に止まる
-    infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
-    // エラー時に止まる
-    infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
-    // 警告時に止まる
-    infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
+    //// やばいエラー時に止まる
+    //infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
+    //// エラー時に止まる
+    //infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+    //// 警告時に止まる
+    //infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
     // 抑制するメッセージのID
     D3D12_MESSAGE_ID denyIds[] = {
         // Windows11でのDXGIデバッグレイヤーの相互作用バグによるエラーメッセージ
@@ -1146,7 +1151,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   //    D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
   // RootParameter作成。複数設定できるので配列。今回は結果1つだけなので長さ1の配列
-  D3D12_ROOT_PARAMETER rootParameters[4] = {};
+  D3D12_ROOT_PARAMETER rootParameters[5] = {};
   rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // CBVを使う
   rootParameters[0].ShaderVisibility =
       D3D12_SHADER_VISIBILITY_PIXEL; // PixelShaderで使う
@@ -1169,6 +1174,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // CBVを使う
   rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // PixelShaderで使う
   rootParameters[3].Descriptor.ShaderRegister = 1; // レジスタ番号1を使う
+
+  rootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+  rootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+  rootParameters[4].Descriptor.ShaderRegister = 2;
 
   descriptionRootSignature.pParameters =
       rootParameters; // ルートパラメータ配列へのポインタ
@@ -1224,6 +1233,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     instancingData[index].WVP = MakeIdentity4x4();
     instancingData[index].World = MakeIdentity4x4();
   }
+
+  materialData->shininess = 10.0f;
+  ID3D12Resource *cameraResource = CreateBufferResource(device, sizeof(CameraForGPU));
+  CameraForGPU *cameraData = nullptr;
+  cameraResource->Map(0, nullptr, reinterpret_cast<void **>(&cameraData));
+
+
 
   ID3D12Resource *indexResourceSprite =
       CreateBufferResource(device, sizeof(uint32_t) * 6);
@@ -1575,6 +1591,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
               1.0f
           };
           vertA.texcoord = { u0, v0 };
+          vertA.normal = {
+              vertA.position.x,
+              vertA.position.y,
+              vertA.position.z,
+          };
 
           VertexData vertB{};
           vertB.position = {
@@ -1584,6 +1605,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
               1.0f
           };
           vertB.texcoord = { u0, v1 };
+          vertB.normal = {
+              vertB.position.x,
+              vertB.position.y,
+              vertB.position.z,
+          };
 
           VertexData vertC{};
           vertC.position = {
@@ -1593,6 +1619,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
               1.0f
           };
           vertC.texcoord = { u1, v0 };
+          vertC.normal = {
+              vertC.position.x,
+              vertC.position.y,
+              vertC.position.z,
+          };
 
           VertexData vertD{};
           vertD.position = {
@@ -1602,6 +1633,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
               1.0f
           };
           vertD.texcoord = { u1, v1 };
+          vertD.normal = {
+              vertD.position.x,
+              vertD.position.y,
+              vertD.position.z,
+          };
 
           // 頂点にデータを入力する。基準点a
           sphereVertexData[start + 0] = vertA;
@@ -1696,9 +1732,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
   // Transform変数を作る
   Transform transform{
-      {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
+      {1.0f, 1.0f, 1.0f}, {0.0f, 1.6f, 0.0f}, {0.0f, 0.0f, 0.0f}};
   Transform cameraTransform{
-      {1.0f, 1.0f, 1.0f}, {0.3f, 3.14f, 0.0f}, {0.0f, 4.0f, 10.0f}};
+      {1.0f, 1.0f, 1.0f}, {0.3f, 3.14f, 0.0f}, {0.0f, 3.0f, 10.0f}};
   Transform transformSprite{
       {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
 
@@ -1822,6 +1858,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   //  transforms[index].translate = {index * 0.1f, index * 0.1f, index * 0.1f};
   //}
 
+  cameraData->worldPosition = cameraTransform.translate;
 
 
 
@@ -1924,6 +1961,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       ImGui::DragFloat3("objTranslate", &transform.translate.x, 0.01f);
       ImGui::DragFloat2("SpriteTranlate", &transformSprite.translate.x, 1.0f,
                         0.0f);
+      ImGui::DragFloat3("direction", &directionalLightData->direction.x, 0.01f, -1.0f, 1.0f);
       ImGui::DragFloat("intensity", &directionalLightData->intensity, 0.01f);
       ImGui::End();
       // 開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
@@ -1978,6 +2016,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 //
 //      commandList->IASetVertexBuffers(0, 1, &modelVertexBufferView); // VBVを設定
  
+      commandList->SetGraphicsRootConstantBufferView(4, cameraResource->GetGPUVirtualAddress());
+
 //      // 描画！(DrawCall/ドローコール)。3頂点で1つのインスタンスについては今後
       commandList->DrawInstanced(kSphereIndexNum, 1, 0, 0);
 //      //commandList->DrawIndexedInstanced(kSphereIndexNum, 1, 0, 0, 0);
