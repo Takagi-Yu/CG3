@@ -832,7 +832,7 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
                                     .texcoord = {1.0f, 1.0f},
                                     .normal = {0.0f, 0.0f, 1.0f}
       });
-      modelData.material.textureFilePath = "./Resources/uvChecker.png";
+      modelData.material.textureFilePath = "./Resources/monsterBall.png";
     } else if (identifier == "mtllib") {
       std::string materialFilename;
       s >> materialFilename;
@@ -1184,7 +1184,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   materialResource->Map(0, nullptr, reinterpret_cast<void **>(&materialData));
   // 今回は赤を書き込んでみる
   materialData->color = {1.0f,1.0f,1.0f,1.0f};
-  materialData->enableLighting = false;
+  materialData->enableLighting = true;
   materialData->uvTransform = MakeIdentity4x4();
 
 
@@ -1211,7 +1211,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   directionalLightResource->Map(0, nullptr,
                         reinterpret_cast<void **>(&directionalLightData));
   directionalLightData->color = {1.0f, 1.0f, 1.0f, 1.0f};
-  directionalLightData->direction = {1.0f, 0.0f, 0.0f};
+  directionalLightData->direction = {0.0f, -1.0f, 0.0f};
   directionalLightData->intensity = 1.0f;
 
   const uint32_t kNumInstance = 10;
@@ -1604,13 +1604,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
           vertD.texcoord = { u1, v1 };
 
           // 頂点にデータを入力する。基準点a
-          vertexData[start + 0] = vertA;
-          vertexData[start + 1] = vertB;
-          vertexData[start + 2] = vertC;
+          sphereVertexData[start + 0] = vertA;
+          sphereVertexData[start + 1] = vertB;
+          sphereVertexData[start + 2] = vertC;
 
-          vertexData[start + 3] = vertD;
-          vertexData[start + 4] = vertC;
-          vertexData[start + 5] = vertB;
+          sphereVertexData[start + 3] = vertD;
+          sphereVertexData[start + 4] = vertC;
+          sphereVertexData[start + 5] = vertB;
       }
   }
 
@@ -1698,7 +1698,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   Transform transform{
       {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
   Transform cameraTransform{
-      {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -10.0f}};
+      {1.0f, 1.0f, 1.0f}, {0.3f, 3.14f, 0.0f}, {0.0f, 4.0f, 10.0f}};
   Transform transformSprite{
       {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
 
