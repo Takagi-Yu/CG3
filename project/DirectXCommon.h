@@ -1,9 +1,11 @@
 ﻿#pragma once
+#include "WinApp.h"
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <wrl.h>
-#include "WinApp.h"
 #include <dxcapi.h>
+
+#include "externals/DirectXTex/DirectXTex.h"
 
 class DirectXCommon
 {
@@ -33,10 +35,19 @@ public: // メンバ関数
 		const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> &descriptorHeap, uint32_t descriptorSize, uint32_t index);
 	static D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(
 		const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> &descriptorHeap, uint32_t descriptorSize, uint32_t index);
+	Microsoft::WRL::ComPtr<IDxcBlob>CompileShader(const std::wstring &filePath, const wchar_t *profile, std::ostream &os);
+	Microsoft::WRL::ComPtr<ID3D12Resource>CreateBufferResource(size_t sizeInBytes);
+	Microsoft::WRL::ComPtr<ID3D12Resource>CreateTextureResource(const DirectX::TexMetadata &metadata);
+
+	void UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource> &texture, const DirectX::ScratchImage &mipImages);
+	static DirectX::ScratchImage LoadTexture(const std::string &filePath);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetSRVCPUDescriptorHandle(uint32_t index);
 	D3D12_GPU_DESCRIPTOR_HANDLE GetSRVGPUDescriptorHandle(uint32_t index);
 
+	// getter
+	ID3D12Device *GetDevice()const { return device_.Get(); }
+	ID3D12GraphicsCommandList *GetCommandList()const { return commandList_.Get(); }
 	
 	//std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, 2> *swapChainResources_;
 
