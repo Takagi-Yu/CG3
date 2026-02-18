@@ -22,6 +22,11 @@ public: // メンバ関数
 	void DXCcompilerInitialize();
 	void ImGuiInitialize();
 
+	// 描画前処理
+	void PreDraw();
+	// 描画後処理
+	void PostDraw();
+
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
 	static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(
@@ -71,5 +76,8 @@ private: // メンバ変数
 	IDxcCompiler3 *dxcCompiler_ = nullptr;
 	IDxcIncludeHandler *includeHandler_ = nullptr;
 
+	ID3D12Fence *fence_ = nullptr;
+	UINT64 fenceVal_ = 0;
+	HANDLE fenceEvent_ = {};
 };
 

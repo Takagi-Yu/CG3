@@ -1743,6 +1743,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//commandList->RSSetScissorRects(1, &scissorRect); // Scirssorを設定
 #pragma endregion 
 
+		dxCommon->PreDraw();
+
 		//// RootSignatureを設定。PSOに設定しているけど別途設定が必要
 		//commandList->SetGraphicsRootSignature(rootSignature);
 		//commandList->SetPipelineState(graphicsPipelineState); // PSOを設定
@@ -1790,6 +1792,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		// 実際のcommandListのImGuiの描画コマンドを積む
 		//ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
+
+		dxCommon->PostDraw();
+
 #pragma region PostDraw
 		//// 画面に描く処理はすべて終わり、画面映すので、状態を遷移
 		//// 今回はRenderTargetからPresentにする
