@@ -4,6 +4,7 @@
 #include <dxgi1_6.h>
 #include <wrl.h>
 #include <dxcapi.h>
+#include <string>
 
 #include "externals/DirectXTex/DirectXTex.h"
 
@@ -29,6 +30,9 @@ public: // メンバ関数
 	// 描画後処理
 	void PostDraw();
 
+	void ExecuteCommandList();
+	void WaitForSignal();
+	void CommandReset();
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
 	static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(
@@ -59,7 +63,7 @@ private: // メンバ変数
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory_;
 
 	ID3D12CommandAllocator* commandAllocator_ = nullptr;
-	ID3D12GraphicsCommandList* commandList_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_;
 	ID3D12CommandQueue* commandQueue_ = nullptr;
 
 	IDXGISwapChain4* swapChain_ = nullptr;

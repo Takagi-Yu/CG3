@@ -3,9 +3,12 @@
 #include "StringUtility.h"
 #include <cassert>
 #include <format>
+#include <vector>
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
+
+#include "externals/DirectXTex/d3dx12.h"
 
 using namespace Microsoft::WRL;
 using namespace Logger;
@@ -30,7 +33,8 @@ void DirectXCommon::Initialize(WinApp* winApp) {
 	ImGuiInitialize();
 }
 
-void DirectXCommon::DeviceInitialize(Microsoft::WRL::ComPtr<ID3D12Device> device, Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory)
+void DirectXCommon::DeviceInitialize(
+	Microsoft::WRL::ComPtr<ID3D12Device> device, Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory)
 {
 	HRESULT hr;
 
@@ -453,13 +457,13 @@ void DirectXCommon::PostDraw()
 	assert(SUCCEEDED(hr));
 
 	// GPUにコマンドリストの実行を行わせる
-	ID3D12CommandList *commandLists[] = { commandList_ };
+	ID3D12CommandList *commandLists[] = { commandList_.Get()};
 	commandQueue_->ExecuteCommandLists(1, commandLists);
 	// GPUとOSに画面の交換を行うよう通知する
 	swapChain_->Present(1, 0);
 
 	//	// FenceのSignalを待つためのイベントを作成する
-	HANDLE fenceEvent_ = CreateEvent(NULL, FALSE, FALSE, NULL);
+	fenceEvent_ = CreateEvent(NULL, FALSE, FALSE, NULL);
 	assert(fenceEvent_ != nullptr);
 
 	// Fenceの値を更新
@@ -475,6 +479,50 @@ void DirectXCommon::PostDraw()
 		// イベント待つ
 		WaitForSingleObject(fenceEvent_, INFINITE);
 	}
+
+	// 次のフレーム用のコマンドリストを準備
+	hr = commandAllocator_->Reset();
+	assert(SUCCEEDED(hr));
+	hr = commandList_->Reset(commandAllocator_, nullptr);
+	assert(SUCCEEDED(hr));
+}
+
+void DirectXCommon::ExecuteCommandList()
+{
+	HRESULT hr;
+	// コマンドリストの内容を確定させる。すべてのコマンドを積んでからCloseすること
+	hr = commandList_->Close();
+	assert(SUCCEEDED(hr));
+
+	// GPUにコマンドリストの実行を行わせる
+	ID3D12CommandList *commandLists[] = { commandList_.Get() };
+	commandQueue_->ExecuteCommandLists(1, commandLists);
+}
+
+void DirectXCommon::WaitForSignal()
+{
+	//	// FenceのSignalを待つためのイベントを作成する
+	fenceEvent_ = CreateEvent(NULL, FALSE, FALSE, NULL);
+	assert(fenceEvent_ != nullptr);
+
+	// Fenceの値を更新
+	fenceVal_++;
+	// GPUがここまでたどり着いたときに、Fenceの値を指定した値に代入するようにSignalを送る
+	commandQueue_->Signal(fence_, fenceVal_);
+
+	// Fenceの値が指定したSignal値にたどり着いているか確認する
+	// GetCompletwdValueの初期値はFence作成時に渡した初期値
+	if (fence_->GetCompletedValue() < fenceVal_) {
+		// 指定したSignalにたどり着いていないので、たどり着くまで待つようにイベントを設定する
+		fence_->SetEventOnCompletion(fenceVal_, fenceEvent_);
+		// イベント待つ
+		WaitForSingleObject(fenceEvent_, INFINITE);
+	}
+}
+
+void DirectXCommon::CommandReset()
+{
+	HRESULT hr;
 
 	// 次のフレーム用のコマンドリストを準備
 	hr = commandAllocator_->Reset();
@@ -642,7 +690,43 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateTextureResource(cons
 	assert(SUCCEEDED(hr));
 	return resource;
 
-	return Microsoft::WRL::ComPtr<ID3D12Resource>();
+	//return Microsoft::WRL::ComPtr<ID3D12Resource>();
+}
+
+void DirectXCommon::UploadTextureData(
+	const Microsoft::WRL::ComPtr<ID3D12Resource> &texture, const DirectX::ScratchImage &mipImages)
+{
+	/*D3D12_HEAP_PROPERTIES heapProperties{};
+	heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+	ID3D12Resource *resource = nullptr;
+	HRESULT hr = device_.Get()->CreateCommittedResource(
+		&heapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&resource));*/
+
+	std::vector<D3D12_SUBRESOURCE_DATA> subresources;
+	DirectX::PrepareUpload(device_.Get(), mipImages.GetImages(),
+		mipImages.GetImageCount(), mipImages.GetMetadata(),
+		subresources);
+	uint64_t intermediateSize =
+		GetRequiredIntermediateSize(texture.Get(), 0, UINT(subresources.size()));
+	ComPtr<ID3D12Resource>intermediateResource =
+		CreateBufferResource(intermediateSize);
+	UpdateSubresources(commandList_.Get(), texture.Get(), intermediateResource.Get(), 0, 0,
+		UINT(subresources.size()), subresources.data());
+
+	D3D12_RESOURCE_BARRIER barrier{};
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.Transition.pResource = texture.Get();
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
+	commandList_->ResourceBarrier(1, &barrier);
+
+	ExecuteCommandList();
+	WaitForSignal();
+	CommandReset();
+
+	//return intermediateResource;
 }
 
 DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string &filePath)
@@ -670,4 +754,9 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string &filePath)
 D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetSRVCPUDescriptorHandle(uint32_t index)
 {
 	return GetCPUDescriptorHandle(srvHeap_, srvDescriptorSize_, index);
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetSRVGPUDescriptorHandle(uint32_t index)
+{
+	return  GetGPUDescriptorHandle(srvHeap_, srvDescriptorSize_, index);
 }
