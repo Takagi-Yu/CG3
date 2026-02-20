@@ -5,6 +5,7 @@
 #include <wrl.h>
 #include <dxcapi.h>
 #include <string>
+#include <chrono>
 
 #include "externals/DirectXTex/DirectXTex.h"
 
@@ -94,5 +95,11 @@ private: // メンバ変数
 	ID3D12Fence *fence_ = nullptr;
 	UINT64 fenceVal_ = 0;
 	HANDLE fenceEvent_ = {};
+
+	// FPS固定初期化
+	void InitializeFixFPS();
+	// FPS固定更新
+	void UpdateFixFPS();
+	std::chrono::steady_clock::time_point referrence_;
 };
 

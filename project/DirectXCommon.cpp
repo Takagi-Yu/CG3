@@ -4,6 +4,7 @@
 #include <cassert>
 #include <format>
 #include <vector>
+#include <thread>
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -18,6 +19,8 @@ using namespace StringUtility;
 void DirectXCommon::Initialize(WinApp* winApp) {
 	assert(winApp);
 	this->winApp_ = winApp;
+
+	InitializeFixFPS();
 
 	DeviceInitialize(device_, dxgiFactory_);
 	CommandInitialize();
@@ -480,6 +483,8 @@ void DirectXCommon::PostDraw()
 		WaitForSingleObject(fenceEvent_, INFINITE);
 	}
 
+	UpdateFixFPS();
+
 	// 次のフレーム用のコマンドリストを準備
 	hr = commandAllocator_->Reset();
 	assert(SUCCEEDED(hr));
@@ -759,4 +764,25 @@ D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetSRVCPUDescriptorHandle(uint32_t in
 D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetSRVGPUDescriptorHandle(uint32_t index)
 {
 	return  GetGPUDescriptorHandle(srvHeap_, srvDescriptorSize_, index);
+}
+
+void DirectXCommon::InitializeFixFPS()
+{
+	referrence_ = std::chrono::steady_clock::now();
+}
+
+void DirectXCommon::UpdateFixFPS()
+{
+	const std::chrono::microseconds kMinTime(uint64_t(1000000.0 / 60.0f));
+
+	const std::chrono::microseconds kMinCheckTime(uint64_t(1000000.0 / 65.0f));
+	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+	std::chrono::microseconds elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - referrence_);
+
+	if (elapsed < kMinCheckTime) {
+		while (std::chrono::steady_clock::now() - referrence_ < kMinTime) {
+			std::this_thread::sleep_for(std::chrono::microseconds(1));
+		}
+	}
+	referrence_ = std::chrono::steady_clock::now();
 }
