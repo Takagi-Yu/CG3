@@ -31,6 +31,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd,
 #include "StringUtility.h"
 #include "SpriteCommon.h"
 #include "Sprite.h"
+#include "MyMath.h"
 
 using namespace StringUtility;
 using namespace Logger;
@@ -108,304 +109,304 @@ struct ModelData {
 	MaterialData material;
 };
 
-Matrix4x4 MakeIdentity4x4() {
-	Matrix4x4 result = {
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		0, 0, 0, 1
-	};
-	return result;
-}
+//Matrix4x4 MakeIdentity4x4() {
+//	Matrix4x4 result = {
+//		1, 0, 0, 0,
+//		0, 1, 0, 0,
+//		0, 0, 1, 0,
+//		0, 0, 0, 1
+//	};
+//	return result;
+//}
 
-Matrix4x4 Multiply(const Matrix4x4 &m1, const Matrix4x4 m2) {
-	Matrix4x4 result{};
-
-	result.m[0][0] = m1.m[0][0] * m2.m[0][0] + m1.m[0][1] * m2.m[1][0] +
-		m1.m[0][2] * m2.m[2][0] + m1.m[0][3] * m2.m[3][0];
-	result.m[0][1] = m1.m[0][0] * m2.m[0][1] + m1.m[0][1] * m2.m[1][1] +
-		m1.m[0][2] * m2.m[2][1] + m1.m[0][3] * m2.m[3][1];
-	result.m[0][2] = m1.m[0][0] * m2.m[0][2] + m1.m[0][1] * m2.m[1][2] +
-		m1.m[0][2] * m2.m[2][2] + m1.m[0][3] * m2.m[3][2];
-	result.m[0][3] = m1.m[0][0] * m2.m[0][3] + m1.m[0][1] * m2.m[1][3] +
-		m1.m[0][2] * m2.m[2][3] + m1.m[0][3] * m2.m[3][3];
-	result.m[1][0] = m1.m[1][0] * m2.m[0][0] + m1.m[1][1] * m2.m[1][0] +
-		m1.m[1][2] * m2.m[2][0] + m1.m[1][3] * m2.m[3][0];
-	result.m[1][1] = m1.m[1][0] * m2.m[0][1] + m1.m[1][1] * m2.m[1][1] +
-		m1.m[1][2] * m2.m[2][1] + m1.m[1][3] * m2.m[3][1];
-	result.m[1][2] = m1.m[1][0] * m2.m[0][2] + m1.m[1][1] * m2.m[1][2] +
-		m1.m[1][2] * m2.m[2][2] + m1.m[1][3] * m2.m[3][2];
-	result.m[1][3] = m1.m[1][0] * m2.m[0][3] + m1.m[1][1] * m2.m[1][3] +
-		m1.m[1][2] * m2.m[2][3] + m1.m[1][3] * m2.m[3][3];
-	result.m[2][0] = m1.m[2][0] * m2.m[0][0] + m1.m[2][1] * m2.m[1][0] +
-		m1.m[2][2] * m2.m[2][0] + m1.m[2][3] * m2.m[3][0];
-	result.m[2][1] = m1.m[2][0] * m2.m[0][1] + m1.m[2][1] * m2.m[1][1] +
-		m1.m[2][2] * m2.m[2][1] + m1.m[2][3] * m2.m[3][1];
-	result.m[2][2] = m1.m[2][0] * m2.m[0][2] + m1.m[2][1] * m2.m[1][2] +
-		m1.m[2][2] * m2.m[2][2] + m1.m[2][3] * m2.m[3][2];
-	result.m[2][3] = m1.m[2][0] * m2.m[0][3] + m1.m[2][1] * m2.m[1][3] +
-		m1.m[2][2] * m2.m[2][3] + m1.m[2][3] * m2.m[3][3];
-	result.m[3][0] = m1.m[3][0] * m2.m[0][0] + m1.m[3][1] * m2.m[1][0] +
-		m1.m[3][2] * m2.m[2][0] + m1.m[3][3] * m2.m[3][0];
-	result.m[3][1] = m1.m[3][0] * m2.m[0][1] + m1.m[3][1] * m2.m[1][1] +
-		m1.m[3][2] * m2.m[2][1] + m1.m[3][3] * m2.m[3][1];
-	result.m[3][2] = m1.m[3][0] * m2.m[0][2] + m1.m[3][1] * m2.m[1][2] +
-		m1.m[3][2] * m2.m[2][2] + m1.m[3][3] * m2.m[3][2];
-	result.m[3][3] = m1.m[3][0] * m2.m[0][3] + m1.m[3][1] * m2.m[1][3] +
-		m1.m[3][2] * m2.m[2][3] + m1.m[3][3] * m2.m[3][3];
-
-	return result;
-}
-
-Matrix4x4 MakeRotateXMatrix(float radian) {
-	Matrix4x4 result{
-		1, 0, 0, 0,
-		0, cosf(radian), sinf(radian), 0,
-		0, -sinf(radian), cosf(radian), 0,
-		0, 0, 0, 1
-	};
-	return result;
-}
-
-Matrix4x4 MakeRotateYMatrix(float radian) {
-	Matrix4x4 result{
-		cosf(radian), 0, -sinf(radian), 0,
-		0, 1, 0, 0,
-		sinf(radian), 0, cosf(radian),  0,
-		0, 0, 0, 1
-	};
-	return result;
-}
-
-Matrix4x4 MakeRotateZMatrix(float radian) {
-	Matrix4x4 result{
-		cosf(radian), sinf(radian), 0, 0,
-		-sinf(radian), cosf(radian), 0, 0,
-		0, 0, 1, 0,
-		0, 0, 0, 1
-	};
-	return result;
-}
-
-Matrix4x4 MakeScaleMatrix(Vector3 scale) {
-	Matrix4x4 result{
-		scale.x, 0.0f, 0.0f, 0.0f,
-		0.0f, scale.y, 0.0f, 0.0f,
-		0.0f, 0.0f, scale.z, 0.0f,
-		0.0f, 0.0f, 0.0f, 1.0f
-	};
-	return result;
-}
-
-Matrix4x4 MakeTranslateMatrix(Vector3 translate) {
-	Matrix4x4 result{
-		1.0f, 0.0f, 0.0f, 0.0f,
-		0.0f, 1.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 1.0f, 0.0f,
-		translate.x, translate.y, translate.z, 1.0f
-	};
-	return result;
-}
-
-Matrix4x4 MakeAffineMatrix(const Vector3 &scale, const Vector3 &rotate,
-	const Vector3 &translate) {
-	Matrix4x4 result;
-
-	Matrix4x4 rotateXMatrix = MakeRotateXMatrix(rotate.x);
-
-	Matrix4x4 rotateYMatrix = MakeRotateYMatrix(rotate.y);
-
-	Matrix4x4 rotateZMatrix = MakeRotateZMatrix(rotate.z);
-
-	Matrix4x4 rotateXYZMatrix =
-		Multiply(rotateXMatrix, Multiply(rotateYMatrix, rotateZMatrix));
-
-	for (int i = 0; i < 3; i++) {
-		result.m[0][i] = scale.x * rotateXYZMatrix.m[0][i];
-	}
-	result.m[0][3] = 0;
-
-	for (int i = 0; i < 3; i++) {
-		result.m[1][i] = scale.y * rotateXYZMatrix.m[1][i];
-	}
-	result.m[1][3] = 0;
-
-	for (int i = 0; i < 3; i++) {
-		result.m[2][i] = scale.z * rotateXYZMatrix.m[2][i];
-	}
-	result.m[2][3] = 0;
-
-	result.m[3][0] = translate.x;
-	result.m[3][1] = translate.y;
-	result.m[3][2] = translate.z;
-	result.m[3][3] = 1;
-
-	return result;
-}
-
-// 透視投影行列
-Matrix4x4 MakePerspectiveFovMatrix(float fovY, float aspectRatio,
-	float nearClip, float farClip) {
-	Matrix4x4 result;
-
-	result.m[0][0] = (1.0f / aspectRatio) * (1.0f / tanf(fovY / 2.0f));
-	result.m[0][1] = 0.0f;
-	result.m[0][2] = 0.0f;
-	result.m[0][3] = 0.0f;
-	result.m[1][0] = 0.0f;
-	result.m[1][1] = 1.0f / tanf(fovY / 2.0f);
-	result.m[1][2] = 0.0f;
-	result.m[1][3] = 0.0f;
-	result.m[2][0] = 0.0f;
-	result.m[2][1] = 0.0f;
-	result.m[2][2] = farClip / (farClip - nearClip);
-	result.m[2][3] = 1.0f;
-	result.m[3][0] = 0.0f;
-	result.m[3][1] = 0.0f;
-	result.m[3][2] = -nearClip * farClip / (farClip - nearClip);
-	result.m[3][3] = 0.0f;
-
-	return result;
-}
-
-Matrix4x4 MakeOrthographicMatrix(float left, float top, float right,
-	float bottom, float nearClip, float farClip) {
-	Matrix4x4 result;
-
-	result.m[0][0] = 2.0f / (right - left);
-	result.m[0][1] = 0.0f;
-	result.m[0][2] = 0.0f;
-	result.m[0][3] = 0.0f;
-	result.m[1][0] = 0.0f;
-	result.m[1][1] = 2.0f / (top - bottom);
-	result.m[1][2] = 0.0f;
-	result.m[1][3] = 0.0f;
-	result.m[2][0] = 0.0f;
-	result.m[2][1] = 0.0f;
-	result.m[2][2] = 1.0f / (farClip - nearClip);
-	result.m[2][3] = 0.0f;
-	result.m[3][0] = (left + right) / (left - right);
-	result.m[3][1] = (top + bottom) / (bottom - top);
-	result.m[3][2] = nearClip / (nearClip - farClip);
-	result.m[3][3] = 1.0f;
-
-	return result;
-}
-
-// 逆行列
-Matrix4x4 Inverse(const Matrix4x4 &m) {
-	Matrix4x4 result;
-	float A = m.m[0][0] * m.m[1][1] * m.m[2][2] * m.m[3][3] +
-		m.m[0][0] * m.m[1][2] * m.m[2][3] * m.m[3][1] +
-		m.m[0][0] * m.m[1][3] * m.m[2][1] * m.m[3][2] - // 3
-		m.m[0][0] * m.m[1][3] * m.m[2][2] * m.m[3][1] -
-		m.m[0][0] * m.m[1][2] * m.m[2][1] * m.m[3][3] -
-		m.m[0][0] * m.m[1][1] * m.m[2][3] * m.m[3][2] - // 6
-		m.m[0][1] * m.m[1][0] * m.m[2][2] * m.m[3][3] -
-		m.m[0][2] * m.m[1][0] * m.m[2][3] * m.m[3][1] -
-		m.m[0][3] * m.m[1][0] * m.m[2][1] * m.m[3][2] + // 9
-		m.m[0][3] * m.m[1][0] * m.m[2][2] * m.m[3][1] +
-		m.m[0][2] * m.m[1][0] * m.m[2][1] * m.m[3][3] +
-		m.m[0][1] * m.m[1][0] * m.m[2][3] * m.m[3][2] + // 12
-		m.m[0][1] * m.m[1][2] * m.m[2][0] * m.m[3][3] +
-		m.m[0][2] * m.m[1][3] * m.m[2][0] * m.m[3][1] +
-		m.m[0][3] * m.m[1][1] * m.m[2][0] * m.m[3][2] - // 15
-		m.m[0][3] * m.m[1][2] * m.m[2][0] * m.m[3][1] -
-		m.m[0][2] * m.m[1][1] * m.m[2][0] * m.m[3][3] -
-		m.m[0][1] * m.m[1][3] * m.m[2][0] * m.m[3][2] - // 18
-		m.m[0][1] * m.m[1][2] * m.m[2][3] * m.m[3][0] -
-		m.m[0][2] * m.m[1][3] * m.m[2][1] * m.m[3][0] -
-		m.m[0][3] * m.m[1][1] * m.m[2][2] * m.m[3][0] + // 21
-		m.m[0][3] * m.m[1][2] * m.m[2][1] * m.m[3][0] +
-		m.m[0][2] * m.m[1][1] * m.m[2][3] * m.m[3][0] +
-		m.m[0][1] * m.m[1][3] * m.m[2][2] * m.m[3][0]; // 24
-
-	result.m[0][0] =
-		1 / A *
-		(m.m[1][1] * m.m[2][2] * m.m[3][3] + m.m[1][2] * m.m[2][3] * m.m[3][1] +
-			m.m[1][3] * m.m[2][1] * m.m[3][2] - m.m[1][3] * m.m[2][2] * m.m[3][1] -
-			m.m[1][2] * m.m[2][1] * m.m[3][3] - m.m[1][1] * m.m[2][3] * m.m[3][2]);
-	result.m[0][1] =
-		1 / A *
-		(-m.m[0][1] * m.m[2][2] * m.m[3][3] - m.m[0][2] * m.m[2][3] * m.m[3][1] -
-			m.m[0][3] * m.m[2][1] * m.m[3][2] + m.m[0][3] * m.m[2][2] * m.m[3][1] +
-			m.m[0][2] * m.m[2][1] * m.m[3][3] + m.m[0][1] * m.m[2][3] * m.m[3][2]);
-	result.m[0][2] =
-		1 / A *
-		(m.m[0][1] * m.m[1][2] * m.m[3][3] + m.m[0][2] * m.m[1][3] * m.m[3][1] +
-			m.m[0][3] * m.m[1][1] * m.m[3][2] - m.m[0][3] * m.m[1][2] * m.m[3][1] -
-			m.m[0][2] * m.m[1][1] * m.m[3][3] - m.m[0][1] * m.m[1][3] * m.m[3][2]);
-	result.m[0][3] =
-		1 / A *
-		(-m.m[0][1] * m.m[1][2] * m.m[2][3] - m.m[0][2] * m.m[1][3] * m.m[2][1] -
-			m.m[0][3] * m.m[1][1] * m.m[2][2] + m.m[0][3] * m.m[1][2] * m.m[2][1] +
-			m.m[0][2] * m.m[1][1] * m.m[2][3] + m.m[0][1] * m.m[1][3] * m.m[2][2]);
-
-	result.m[1][0] =
-		1 / A *
-		(-m.m[1][0] * m.m[2][2] * m.m[3][3] - m.m[1][2] * m.m[2][3] * m.m[3][0] -
-			m.m[1][3] * m.m[2][0] * m.m[3][2] + m.m[1][3] * m.m[2][2] * m.m[3][0] +
-			m.m[1][2] * m.m[2][0] * m.m[3][3] + m.m[1][0] * m.m[2][3] * m.m[3][2]);
-	result.m[1][1] =
-		1 / A *
-		(m.m[0][0] * m.m[2][2] * m.m[3][3] + m.m[0][2] * m.m[2][3] * m.m[3][0] +
-			m.m[0][3] * m.m[2][0] * m.m[3][2] - m.m[0][3] * m.m[2][2] * m.m[3][0] -
-			m.m[0][2] * m.m[2][0] * m.m[3][3] - m.m[0][0] * m.m[2][3] * m.m[3][2]);
-	result.m[1][2] =
-		1 / A *
-		(-m.m[0][0] * m.m[1][2] * m.m[3][3] - m.m[0][2] * m.m[1][3] * m.m[3][0] -
-			m.m[0][3] * m.m[1][0] * m.m[3][2] + m.m[0][3] * m.m[1][2] * m.m[3][0] +
-			m.m[0][2] * m.m[1][0] * m.m[3][3] + m.m[0][0] * m.m[1][3] * m.m[3][2]);
-	result.m[1][3] =
-		1 / A *
-		(m.m[0][0] * m.m[1][2] * m.m[2][3] + m.m[0][2] * m.m[1][3] * m.m[2][0] +
-			m.m[0][3] * m.m[1][0] * m.m[2][2] - m.m[0][3] * m.m[1][2] * m.m[2][0] -
-			m.m[0][2] * m.m[1][0] * m.m[2][3] - m.m[0][0] * m.m[1][3] * m.m[2][2]);
-
-	result.m[2][0] =
-		1 / A *
-		(m.m[1][0] * m.m[2][1] * m.m[3][3] + m.m[1][1] * m.m[2][3] * m.m[3][0] +
-			m.m[1][3] * m.m[2][0] * m.m[3][1] - m.m[1][3] * m.m[2][1] * m.m[3][0] -
-			m.m[1][1] * m.m[2][0] * m.m[3][3] - m.m[1][0] * m.m[2][3] * m.m[3][1]);
-	result.m[2][1] =
-		1 / A *
-		(-m.m[0][0] * m.m[2][1] * m.m[3][3] - m.m[0][1] * m.m[2][3] * m.m[3][0] -
-			m.m[0][3] * m.m[2][0] * m.m[3][1] + m.m[0][3] * m.m[2][1] * m.m[3][0] +
-			m.m[0][1] * m.m[2][0] * m.m[3][3] + m.m[0][0] * m.m[2][3] * m.m[3][1]);
-	result.m[2][2] =
-		1 / A *
-		(m.m[0][0] * m.m[1][1] * m.m[3][3] + m.m[0][1] * m.m[1][3] * m.m[3][0] +
-			m.m[0][3] * m.m[1][0] * m.m[3][1] - m.m[0][3] * m.m[1][1] * m.m[3][0] -
-			m.m[0][1] * m.m[1][0] * m.m[3][3] - m.m[0][0] * m.m[1][3] * m.m[3][1]);
-	result.m[2][3] =
-		1 / A *
-		(-m.m[0][0] * m.m[1][1] * m.m[2][3] - m.m[0][1] * m.m[1][3] * m.m[2][0] -
-			m.m[0][3] * m.m[1][0] * m.m[2][1] + m.m[0][3] * m.m[1][1] * m.m[2][0] +
-			m.m[0][1] * m.m[1][0] * m.m[2][3] + m.m[0][0] * m.m[1][3] * m.m[2][1]);
-
-	result.m[3][0] =
-		1 / A *
-		(-m.m[1][0] * m.m[2][1] * m.m[3][2] - m.m[1][1] * m.m[2][2] * m.m[3][0] -
-			m.m[1][2] * m.m[2][0] * m.m[3][1] + m.m[1][2] * m.m[2][1] * m.m[3][0] +
-			m.m[1][1] * m.m[2][0] * m.m[3][2] + m.m[1][0] * m.m[2][2] * m.m[3][1]);
-	result.m[3][1] =
-		1 / A *
-		(m.m[0][0] * m.m[2][1] * m.m[3][2] + m.m[0][1] * m.m[2][2] * m.m[3][0] +
-			m.m[0][2] * m.m[2][0] * m.m[3][1] - m.m[0][2] * m.m[2][1] * m.m[3][0] -
-			m.m[0][1] * m.m[2][0] * m.m[3][2] - m.m[0][0] * m.m[2][2] * m.m[3][1]);
-	result.m[3][2] =
-		1 / A *
-		(-m.m[0][0] * m.m[1][1] * m.m[3][2] - m.m[0][1] * m.m[1][2] * m.m[3][0] -
-			m.m[0][2] * m.m[1][0] * m.m[3][1] + m.m[0][2] * m.m[1][1] * m.m[3][0] +
-			m.m[0][1] * m.m[1][0] * m.m[3][2] + m.m[0][0] * m.m[1][2] * m.m[3][1]);
-	result.m[3][3] =
-		1 / A *
-		(m.m[0][0] * m.m[1][1] * m.m[2][2] + m.m[0][1] * m.m[1][2] * m.m[2][0] +
-			m.m[0][2] * m.m[1][0] * m.m[2][1] - m.m[0][2] * m.m[1][1] * m.m[2][0] -
-			m.m[0][1] * m.m[1][0] * m.m[2][2] - m.m[0][0] * m.m[1][2] * m.m[2][1]);
-
-	return result;
-}
+//Matrix4x4 Multiply(const Matrix4x4 &m1, const Matrix4x4 m2) {
+//	Matrix4x4 result{};
+//
+//	result.m[0][0] = m1.m[0][0] * m2.m[0][0] + m1.m[0][1] * m2.m[1][0] +
+//		m1.m[0][2] * m2.m[2][0] + m1.m[0][3] * m2.m[3][0];
+//	result.m[0][1] = m1.m[0][0] * m2.m[0][1] + m1.m[0][1] * m2.m[1][1] +
+//		m1.m[0][2] * m2.m[2][1] + m1.m[0][3] * m2.m[3][1];
+//	result.m[0][2] = m1.m[0][0] * m2.m[0][2] + m1.m[0][1] * m2.m[1][2] +
+//		m1.m[0][2] * m2.m[2][2] + m1.m[0][3] * m2.m[3][2];
+//	result.m[0][3] = m1.m[0][0] * m2.m[0][3] + m1.m[0][1] * m2.m[1][3] +
+//		m1.m[0][2] * m2.m[2][3] + m1.m[0][3] * m2.m[3][3];
+//	result.m[1][0] = m1.m[1][0] * m2.m[0][0] + m1.m[1][1] * m2.m[1][0] +
+//		m1.m[1][2] * m2.m[2][0] + m1.m[1][3] * m2.m[3][0];
+//	result.m[1][1] = m1.m[1][0] * m2.m[0][1] + m1.m[1][1] * m2.m[1][1] +
+//		m1.m[1][2] * m2.m[2][1] + m1.m[1][3] * m2.m[3][1];
+//	result.m[1][2] = m1.m[1][0] * m2.m[0][2] + m1.m[1][1] * m2.m[1][2] +
+//		m1.m[1][2] * m2.m[2][2] + m1.m[1][3] * m2.m[3][2];
+//	result.m[1][3] = m1.m[1][0] * m2.m[0][3] + m1.m[1][1] * m2.m[1][3] +
+//		m1.m[1][2] * m2.m[2][3] + m1.m[1][3] * m2.m[3][3];
+//	result.m[2][0] = m1.m[2][0] * m2.m[0][0] + m1.m[2][1] * m2.m[1][0] +
+//		m1.m[2][2] * m2.m[2][0] + m1.m[2][3] * m2.m[3][0];
+//	result.m[2][1] = m1.m[2][0] * m2.m[0][1] + m1.m[2][1] * m2.m[1][1] +
+//		m1.m[2][2] * m2.m[2][1] + m1.m[2][3] * m2.m[3][1];
+//	result.m[2][2] = m1.m[2][0] * m2.m[0][2] + m1.m[2][1] * m2.m[1][2] +
+//		m1.m[2][2] * m2.m[2][2] + m1.m[2][3] * m2.m[3][2];
+//	result.m[2][3] = m1.m[2][0] * m2.m[0][3] + m1.m[2][1] * m2.m[1][3] +
+//		m1.m[2][2] * m2.m[2][3] + m1.m[2][3] * m2.m[3][3];
+//	result.m[3][0] = m1.m[3][0] * m2.m[0][0] + m1.m[3][1] * m2.m[1][0] +
+//		m1.m[3][2] * m2.m[2][0] + m1.m[3][3] * m2.m[3][0];
+//	result.m[3][1] = m1.m[3][0] * m2.m[0][1] + m1.m[3][1] * m2.m[1][1] +
+//		m1.m[3][2] * m2.m[2][1] + m1.m[3][3] * m2.m[3][1];
+//	result.m[3][2] = m1.m[3][0] * m2.m[0][2] + m1.m[3][1] * m2.m[1][2] +
+//		m1.m[3][2] * m2.m[2][2] + m1.m[3][3] * m2.m[3][2];
+//	result.m[3][3] = m1.m[3][0] * m2.m[0][3] + m1.m[3][1] * m2.m[1][3] +
+//		m1.m[3][2] * m2.m[2][3] + m1.m[3][3] * m2.m[3][3];
+//
+//	return result;
+//}
+//
+//Matrix4x4 MakeRotateXMatrix(float radian) {
+//	Matrix4x4 result{
+//		1, 0, 0, 0,
+//		0, cosf(radian), sinf(radian), 0,
+//		0, -sinf(radian), cosf(radian), 0,
+//		0, 0, 0, 1
+//	};
+//	return result;
+//}
+//
+//Matrix4x4 MakeRotateYMatrix(float radian) {
+//	Matrix4x4 result{
+//		cosf(radian), 0, -sinf(radian), 0,
+//		0, 1, 0, 0,
+//		sinf(radian), 0, cosf(radian),  0,
+//		0, 0, 0, 1
+//	};
+//	return result;
+//}
+//
+//Matrix4x4 MakeRotateZMatrix(float radian) {
+//	Matrix4x4 result{
+//		cosf(radian), sinf(radian), 0, 0,
+//		-sinf(radian), cosf(radian), 0, 0,
+//		0, 0, 1, 0,
+//		0, 0, 0, 1
+//	};
+//	return result;
+//}
+//
+//Matrix4x4 MakeScaleMatrix(Vector3 scale) {
+//	Matrix4x4 result{
+//		scale.x, 0.0f, 0.0f, 0.0f,
+//		0.0f, scale.y, 0.0f, 0.0f,
+//		0.0f, 0.0f, scale.z, 0.0f,
+//		0.0f, 0.0f, 0.0f, 1.0f
+//	};
+//	return result;
+//}
+//
+//Matrix4x4 MakeTranslateMatrix(Vector3 translate) {
+//	Matrix4x4 result{
+//		1.0f, 0.0f, 0.0f, 0.0f,
+//		0.0f, 1.0f, 0.0f, 0.0f,
+//		0.0f, 0.0f, 1.0f, 0.0f,
+//		translate.x, translate.y, translate.z, 1.0f
+//	};
+//	return result;
+//}
+//
+//Matrix4x4 MakeAffineMatrix(const Vector3 &scale, const Vector3 &rotate,
+//	const Vector3 &translate) {
+//	Matrix4x4 result;
+//
+//	Matrix4x4 rotateXMatrix = MakeRotateXMatrix(rotate.x);
+//
+//	Matrix4x4 rotateYMatrix = MakeRotateYMatrix(rotate.y);
+//
+//	Matrix4x4 rotateZMatrix = MakeRotateZMatrix(rotate.z);
+//
+//	Matrix4x4 rotateXYZMatrix =
+//		Multiply(rotateXMatrix, Multiply(rotateYMatrix, rotateZMatrix));
+//
+//	for (int i = 0; i < 3; i++) {
+//		result.m[0][i] = scale.x * rotateXYZMatrix.m[0][i];
+//	}
+//	result.m[0][3] = 0;
+//
+//	for (int i = 0; i < 3; i++) {
+//		result.m[1][i] = scale.y * rotateXYZMatrix.m[1][i];
+//	}
+//	result.m[1][3] = 0;
+//
+//	for (int i = 0; i < 3; i++) {
+//		result.m[2][i] = scale.z * rotateXYZMatrix.m[2][i];
+//	}
+//	result.m[2][3] = 0;
+//
+//	result.m[3][0] = translate.x;
+//	result.m[3][1] = translate.y;
+//	result.m[3][2] = translate.z;
+//	result.m[3][3] = 1;
+//
+//	return result;
+//}
+//
+//// 透視投影行列
+//Matrix4x4 MakePerspectiveFovMatrix(float fovY, float aspectRatio,
+//	float nearClip, float farClip) {
+//	Matrix4x4 result;
+//
+//	result.m[0][0] = (1.0f / aspectRatio) * (1.0f / tanf(fovY / 2.0f));
+//	result.m[0][1] = 0.0f;
+//	result.m[0][2] = 0.0f;
+//	result.m[0][3] = 0.0f;
+//	result.m[1][0] = 0.0f;
+//	result.m[1][1] = 1.0f / tanf(fovY / 2.0f);
+//	result.m[1][2] = 0.0f;
+//	result.m[1][3] = 0.0f;
+//	result.m[2][0] = 0.0f;
+//	result.m[2][1] = 0.0f;
+//	result.m[2][2] = farClip / (farClip - nearClip);
+//	result.m[2][3] = 1.0f;
+//	result.m[3][0] = 0.0f;
+//	result.m[3][1] = 0.0f;
+//	result.m[3][2] = -nearClip * farClip / (farClip - nearClip);
+//	result.m[3][3] = 0.0f;
+//
+//	return result;
+//}
+//
+//Matrix4x4 MakeOrthographicMatrix(float left, float top, float right,
+//	float bottom, float nearClip, float farClip) {
+//	Matrix4x4 result;
+//
+//	result.m[0][0] = 2.0f / (right - left);
+//	result.m[0][1] = 0.0f;
+//	result.m[0][2] = 0.0f;
+//	result.m[0][3] = 0.0f;
+//	result.m[1][0] = 0.0f;
+//	result.m[1][1] = 2.0f / (top - bottom);
+//	result.m[1][2] = 0.0f;
+//	result.m[1][3] = 0.0f;
+//	result.m[2][0] = 0.0f;
+//	result.m[2][1] = 0.0f;
+//	result.m[2][2] = 1.0f / (farClip - nearClip);
+//	result.m[2][3] = 0.0f;
+//	result.m[3][0] = (left + right) / (left - right);
+//	result.m[3][1] = (top + bottom) / (bottom - top);
+//	result.m[3][2] = nearClip / (nearClip - farClip);
+//	result.m[3][3] = 1.0f;
+//
+//	return result;
+//}
+//
+//// 逆行列
+//Matrix4x4 Inverse(const Matrix4x4 &m) {
+//	Matrix4x4 result;
+//	float A = m.m[0][0] * m.m[1][1] * m.m[2][2] * m.m[3][3] +
+//		m.m[0][0] * m.m[1][2] * m.m[2][3] * m.m[3][1] +
+//		m.m[0][0] * m.m[1][3] * m.m[2][1] * m.m[3][2] - // 3
+//		m.m[0][0] * m.m[1][3] * m.m[2][2] * m.m[3][1] -
+//		m.m[0][0] * m.m[1][2] * m.m[2][1] * m.m[3][3] -
+//		m.m[0][0] * m.m[1][1] * m.m[2][3] * m.m[3][2] - // 6
+//		m.m[0][1] * m.m[1][0] * m.m[2][2] * m.m[3][3] -
+//		m.m[0][2] * m.m[1][0] * m.m[2][3] * m.m[3][1] -
+//		m.m[0][3] * m.m[1][0] * m.m[2][1] * m.m[3][2] + // 9
+//		m.m[0][3] * m.m[1][0] * m.m[2][2] * m.m[3][1] +
+//		m.m[0][2] * m.m[1][0] * m.m[2][1] * m.m[3][3] +
+//		m.m[0][1] * m.m[1][0] * m.m[2][3] * m.m[3][2] + // 12
+//		m.m[0][1] * m.m[1][2] * m.m[2][0] * m.m[3][3] +
+//		m.m[0][2] * m.m[1][3] * m.m[2][0] * m.m[3][1] +
+//		m.m[0][3] * m.m[1][1] * m.m[2][0] * m.m[3][2] - // 15
+//		m.m[0][3] * m.m[1][2] * m.m[2][0] * m.m[3][1] -
+//		m.m[0][2] * m.m[1][1] * m.m[2][0] * m.m[3][3] -
+//		m.m[0][1] * m.m[1][3] * m.m[2][0] * m.m[3][2] - // 18
+//		m.m[0][1] * m.m[1][2] * m.m[2][3] * m.m[3][0] -
+//		m.m[0][2] * m.m[1][3] * m.m[2][1] * m.m[3][0] -
+//		m.m[0][3] * m.m[1][1] * m.m[2][2] * m.m[3][0] + // 21
+//		m.m[0][3] * m.m[1][2] * m.m[2][1] * m.m[3][0] +
+//		m.m[0][2] * m.m[1][1] * m.m[2][3] * m.m[3][0] +
+//		m.m[0][1] * m.m[1][3] * m.m[2][2] * m.m[3][0]; // 24
+//
+//	result.m[0][0] =
+//		1 / A *
+//		(m.m[1][1] * m.m[2][2] * m.m[3][3] + m.m[1][2] * m.m[2][3] * m.m[3][1] +
+//			m.m[1][3] * m.m[2][1] * m.m[3][2] - m.m[1][3] * m.m[2][2] * m.m[3][1] -
+//			m.m[1][2] * m.m[2][1] * m.m[3][3] - m.m[1][1] * m.m[2][3] * m.m[3][2]);
+//	result.m[0][1] =
+//		1 / A *
+//		(-m.m[0][1] * m.m[2][2] * m.m[3][3] - m.m[0][2] * m.m[2][3] * m.m[3][1] -
+//			m.m[0][3] * m.m[2][1] * m.m[3][2] + m.m[0][3] * m.m[2][2] * m.m[3][1] +
+//			m.m[0][2] * m.m[2][1] * m.m[3][3] + m.m[0][1] * m.m[2][3] * m.m[3][2]);
+//	result.m[0][2] =
+//		1 / A *
+//		(m.m[0][1] * m.m[1][2] * m.m[3][3] + m.m[0][2] * m.m[1][3] * m.m[3][1] +
+//			m.m[0][3] * m.m[1][1] * m.m[3][2] - m.m[0][3] * m.m[1][2] * m.m[3][1] -
+//			m.m[0][2] * m.m[1][1] * m.m[3][3] - m.m[0][1] * m.m[1][3] * m.m[3][2]);
+//	result.m[0][3] =
+//		1 / A *
+//		(-m.m[0][1] * m.m[1][2] * m.m[2][3] - m.m[0][2] * m.m[1][3] * m.m[2][1] -
+//			m.m[0][3] * m.m[1][1] * m.m[2][2] + m.m[0][3] * m.m[1][2] * m.m[2][1] +
+//			m.m[0][2] * m.m[1][1] * m.m[2][3] + m.m[0][1] * m.m[1][3] * m.m[2][2]);
+//
+//	result.m[1][0] =
+//		1 / A *
+//		(-m.m[1][0] * m.m[2][2] * m.m[3][3] - m.m[1][2] * m.m[2][3] * m.m[3][0] -
+//			m.m[1][3] * m.m[2][0] * m.m[3][2] + m.m[1][3] * m.m[2][2] * m.m[3][0] +
+//			m.m[1][2] * m.m[2][0] * m.m[3][3] + m.m[1][0] * m.m[2][3] * m.m[3][2]);
+//	result.m[1][1] =
+//		1 / A *
+//		(m.m[0][0] * m.m[2][2] * m.m[3][3] + m.m[0][2] * m.m[2][3] * m.m[3][0] +
+//			m.m[0][3] * m.m[2][0] * m.m[3][2] - m.m[0][3] * m.m[2][2] * m.m[3][0] -
+//			m.m[0][2] * m.m[2][0] * m.m[3][3] - m.m[0][0] * m.m[2][3] * m.m[3][2]);
+//	result.m[1][2] =
+//		1 / A *
+//		(-m.m[0][0] * m.m[1][2] * m.m[3][3] - m.m[0][2] * m.m[1][3] * m.m[3][0] -
+//			m.m[0][3] * m.m[1][0] * m.m[3][2] + m.m[0][3] * m.m[1][2] * m.m[3][0] +
+//			m.m[0][2] * m.m[1][0] * m.m[3][3] + m.m[0][0] * m.m[1][3] * m.m[3][2]);
+//	result.m[1][3] =
+//		1 / A *
+//		(m.m[0][0] * m.m[1][2] * m.m[2][3] + m.m[0][2] * m.m[1][3] * m.m[2][0] +
+//			m.m[0][3] * m.m[1][0] * m.m[2][2] - m.m[0][3] * m.m[1][2] * m.m[2][0] -
+//			m.m[0][2] * m.m[1][0] * m.m[2][3] - m.m[0][0] * m.m[1][3] * m.m[2][2]);
+//
+//	result.m[2][0] =
+//		1 / A *
+//		(m.m[1][0] * m.m[2][1] * m.m[3][3] + m.m[1][1] * m.m[2][3] * m.m[3][0] +
+//			m.m[1][3] * m.m[2][0] * m.m[3][1] - m.m[1][3] * m.m[2][1] * m.m[3][0] -
+//			m.m[1][1] * m.m[2][0] * m.m[3][3] - m.m[1][0] * m.m[2][3] * m.m[3][1]);
+//	result.m[2][1] =
+//		1 / A *
+//		(-m.m[0][0] * m.m[2][1] * m.m[3][3] - m.m[0][1] * m.m[2][3] * m.m[3][0] -
+//			m.m[0][3] * m.m[2][0] * m.m[3][1] + m.m[0][3] * m.m[2][1] * m.m[3][0] +
+//			m.m[0][1] * m.m[2][0] * m.m[3][3] + m.m[0][0] * m.m[2][3] * m.m[3][1]);
+//	result.m[2][2] =
+//		1 / A *
+//		(m.m[0][0] * m.m[1][1] * m.m[3][3] + m.m[0][1] * m.m[1][3] * m.m[3][0] +
+//			m.m[0][3] * m.m[1][0] * m.m[3][1] - m.m[0][3] * m.m[1][1] * m.m[3][0] -
+//			m.m[0][1] * m.m[1][0] * m.m[3][3] - m.m[0][0] * m.m[1][3] * m.m[3][1]);
+//	result.m[2][3] =
+//		1 / A *
+//		(-m.m[0][0] * m.m[1][1] * m.m[2][3] - m.m[0][1] * m.m[1][3] * m.m[2][0] -
+//			m.m[0][3] * m.m[1][0] * m.m[2][1] + m.m[0][3] * m.m[1][1] * m.m[2][0] +
+//			m.m[0][1] * m.m[1][0] * m.m[2][3] + m.m[0][0] * m.m[1][3] * m.m[2][1]);
+//
+//	result.m[3][0] =
+//		1 / A *
+//		(-m.m[1][0] * m.m[2][1] * m.m[3][2] - m.m[1][1] * m.m[2][2] * m.m[3][0] -
+//			m.m[1][2] * m.m[2][0] * m.m[3][1] + m.m[1][2] * m.m[2][1] * m.m[3][0] +
+//			m.m[1][1] * m.m[2][0] * m.m[3][2] + m.m[1][0] * m.m[2][2] * m.m[3][1]);
+//	result.m[3][1] =
+//		1 / A *
+//		(m.m[0][0] * m.m[2][1] * m.m[3][2] + m.m[0][1] * m.m[2][2] * m.m[3][0] +
+//			m.m[0][2] * m.m[2][0] * m.m[3][1] - m.m[0][2] * m.m[2][1] * m.m[3][0] -
+//			m.m[0][1] * m.m[2][0] * m.m[3][2] - m.m[0][0] * m.m[2][2] * m.m[3][1]);
+//	result.m[3][2] =
+//		1 / A *
+//		(-m.m[0][0] * m.m[1][1] * m.m[3][2] - m.m[0][1] * m.m[1][2] * m.m[3][0] -
+//			m.m[0][2] * m.m[1][0] * m.m[3][1] + m.m[0][2] * m.m[1][1] * m.m[3][0] +
+//			m.m[0][1] * m.m[1][0] * m.m[3][2] + m.m[0][0] * m.m[1][2] * m.m[3][1]);
+//	result.m[3][3] =
+//		1 / A *
+//		(m.m[0][0] * m.m[1][1] * m.m[2][2] + m.m[0][1] * m.m[1][2] * m.m[2][0] +
+//			m.m[0][2] * m.m[1][0] * m.m[2][1] - m.m[0][2] * m.m[1][1] * m.m[2][0] -
+//			m.m[0][1] * m.m[1][0] * m.m[2][2] - m.m[0][0] * m.m[1][2] * m.m[2][1]);
+//
+//	return result;
+//}
 
 static LONG WINAPI ExportDump(EXCEPTION_POINTERS *exception) {
 	// 時刻を取得して、時刻を名前に入れたファイルを作成。Dumpディレクトリ以下に出力
@@ -510,67 +511,67 @@ ID3D12DescriptorHeap *CreateDescriptorHeap(ID3D12Device *device,
 	return descriptorHeap;
 }
 
-IDxcBlob *CompileShader(
-	const std::wstring &filePath, // CompilerするShaderファイルへのパス
-	const wchar_t *profile,       // Compilerに使用するProfile
-	IDxcUtils *dxcUtils,          // 初期化で生成したものを3つ
-	IDxcCompiler3 *dxcCompiler, IDxcIncludeHandler *includeHandler,
-	std::ostream &os) {
-	// これからシェーダーをコンパイルする旨をログに出す
-	Log(os,
-		ConvertString(std::format(L"Begin CompileShader, path:{}, profile:{}\n",
-			filePath, profile)));
-	// hlslファイルを読む
-	IDxcBlobEncoding *shaderSource = nullptr;
-	HRESULT hr = dxcUtils->LoadFile(filePath.c_str(), nullptr, &shaderSource);
-	// 読めなかったら止める
-	assert(SUCCEEDED(hr));
-	// 読み込んだファイルの内容を設定する
-	DxcBuffer shaderSourceBuffer;
-	shaderSourceBuffer.Ptr = shaderSource->GetBufferPointer();
-	shaderSourceBuffer.Size = shaderSource->GetBufferSize();
-	shaderSourceBuffer.Encoding = DXC_CP_UTF8; // UTF8の文字コードであることを通知
-
-	LPCWSTR arguments[] = {
-		filePath.c_str(), // コンパイル対象のhlslファイル名
-		L"-E",
-		L"main", // エントリーポイントの指定。基本的にmain以外にはしない
-		L"-T",
-		profile, // ShaderProfileの設定
-		L"-Zi",
-		L"-Qembed_debug", // デバッグ用の情報を埋め込む
-		L"-Od",           // 最適化を外しておく
-		L"-Zpr",          // メモリレイアウトは行優先
-	};
-	// 実際にShaderをコンパイルする
-	IDxcResult *shaderResult = nullptr;
-	hr = dxcCompiler->Compile(&shaderSourceBuffer, arguments, _countof(arguments),
-		includeHandler, IID_PPV_ARGS(&shaderResult));
-	// コンパイラエラーではなくdxcが起動できないなど致命的な状況
-	assert(SUCCEEDED(hr));
-
-	// 警告・エラーが出てたらログに出して止める
-	IDxcBlobUtf8 *shaderError = nullptr;
-	shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
-	if (shaderError != nullptr && shaderError->GetStringLength() != 0) {
-		Log(os, shaderError->GetStringPointer());
-		// 警告・エラーダメゼッタイ
-		assert(false);
-	}
-	// コンパイル結果から実行用のバイナリ部分を取得
-	IDxcBlob *shaderBlob = nullptr;
-	hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob),
-		nullptr);
-	assert(SUCCEEDED(hr));
-	// 成功したログを出す
-	Log(os, ConvertString(std::format(L"Compile Succeeded, path:{}, profile:{}\n",
-		filePath, profile)));
-	// もう使わないリソースを解放
-	shaderSource->Release();
-	shaderResult->Release();
-	// 実行用のバイナリを返却
-	return shaderBlob;
-}
+//IDxcBlob *CompileShader(
+//	const std::wstring &filePath, // CompilerするShaderファイルへのパス
+//	const wchar_t *profile,       // Compilerに使用するProfile
+//	IDxcUtils *dxcUtils,          // 初期化で生成したものを3つ
+//	IDxcCompiler3 *dxcCompiler, IDxcIncludeHandler *includeHandler,
+//	std::ostream &os) {
+//	// これからシェーダーをコンパイルする旨をログに出す
+//	Log(os,
+//		ConvertString(std::format(L"Begin CompileShader, path:{}, profile:{}\n",
+//			filePath, profile)));
+//	// hlslファイルを読む
+//	IDxcBlobEncoding *shaderSource = nullptr;
+//	HRESULT hr = dxcUtils->LoadFile(filePath.c_str(), nullptr, &shaderSource);
+//	// 読めなかったら止める
+//	assert(SUCCEEDED(hr));
+//	// 読み込んだファイルの内容を設定する
+//	DxcBuffer shaderSourceBuffer;
+//	shaderSourceBuffer.Ptr = shaderSource->GetBufferPointer();
+//	shaderSourceBuffer.Size = shaderSource->GetBufferSize();
+//	shaderSourceBuffer.Encoding = DXC_CP_UTF8; // UTF8の文字コードであることを通知
+//
+//	LPCWSTR arguments[] = {
+//		filePath.c_str(), // コンパイル対象のhlslファイル名
+//		L"-E",
+//		L"main", // エントリーポイントの指定。基本的にmain以外にはしない
+//		L"-T",
+//		profile, // ShaderProfileの設定
+//		L"-Zi",
+//		L"-Qembed_debug", // デバッグ用の情報を埋め込む
+//		L"-Od",           // 最適化を外しておく
+//		L"-Zpr",          // メモリレイアウトは行優先
+//	};
+//	// 実際にShaderをコンパイルする
+//	IDxcResult *shaderResult = nullptr;
+//	hr = dxcCompiler->Compile(&shaderSourceBuffer, arguments, _countof(arguments),
+//		includeHandler, IID_PPV_ARGS(&shaderResult));
+//	// コンパイラエラーではなくdxcが起動できないなど致命的な状況
+//	assert(SUCCEEDED(hr));
+//
+//	// 警告・エラーが出てたらログに出して止める
+//	IDxcBlobUtf8 *shaderError = nullptr;
+//	shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
+//	if (shaderError != nullptr && shaderError->GetStringLength() != 0) {
+//		Log(os, shaderError->GetStringPointer());
+//		// 警告・エラーダメゼッタイ
+//		assert(false);
+//	}
+//	// コンパイル結果から実行用のバイナリ部分を取得
+//	IDxcBlob *shaderBlob = nullptr;
+//	hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob),
+//		nullptr);
+//	assert(SUCCEEDED(hr));
+//	// 成功したログを出す
+//	Log(os, ConvertString(std::format(L"Compile Succeeded, path:{}, profile:{}\n",
+//		filePath, profile)));
+//	// もう使わないリソースを解放
+//	shaderSource->Release();
+//	shaderResult->Release();
+//	// 実行用のバイナリを返却
+//	return shaderBlob;
+//}
 
 ID3D12Resource *CreateBufferResource(ID3D12Device *device, size_t sizeInBytes) {
 	// 頂点リソース用のヒープの設定
@@ -858,7 +859,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	spriteCommon->Initialize(dxCommon);
 
 	Sprite *sprite = new Sprite();
-	sprite->Initialize(spriteCommon, logFilePath);
+	sprite->Initialize(spriteCommon,dxCommon);
 
 	//HRESULT hr;
 
@@ -1574,6 +1575,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	device->CreateShaderResourceView(textureResource.Get(), &srvDesc,
 		textureSrvHandleCPU);
 
+	sprite->SetSRVHandleGPU(textureSrvHandleGPU);
+
 	//// DepthStencilTextureをウィンドウのサイズで作成
 	//ID3D12Resource *depthStencilResource =
 	//	CreateDepthStencilTextureResource(device, WinApp::kClientWidth_, WinApp::kClientHeight_);
@@ -1659,15 +1662,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//commandList->ResourceBarrier(1, &barrier);
 
 
-		transform.rotate.y += 0.0f;
-		Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
-		Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
-		Matrix4x4 viewMatrix = Inverse(cameraMatrix);
-		Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth_) / float(WinApp::kClientHeight_), 0.1f, 100.0f);
-		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
-		transformationMatrixDataSphere->WVP = worldViewProjectionMatrix;
-		transformationMatrixDataSphere->World = worldMatrix;
+		//transform.rotate.y += 0.0f;
+		//Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+		//Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
+		//Matrix4x4 viewMatrix = Inverse(cameraMatrix);
+		//Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth_) / float(WinApp::kClientHeight_), 0.1f, 100.0f);
+		//Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
+		//transformationMatrixDataSphere->WVP = worldViewProjectionMatrix;
+		//transformationMatrixDataSphere->World = worldMatrix;
 
+		sprite->Update();
 
 		// Sprite用のWorldProjectionMatrixを作る
 		Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
@@ -1773,19 +1777,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 
 #pragma region Sprite Draw
+
+		sprite->Draw();
 		// マテリアルCBufferの場所を設定
-		commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // VBVを設定
-		commandList->IASetIndexBuffer(&indexBufferViewSprite); // VBVを設定
-		// Material
-		commandList->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
-		// TransformationMatrix
-		commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
-		// Texture
-		commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
-		// DirectionalLight
-		commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
-		// DrawCall
-		commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+		//commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // VBVを設定
+		//commandList->IASetIndexBuffer(&indexBufferViewSprite); // VBVを設定
+		//// Material
+		//commandList->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
+		//// TransformationMatrix
+		//commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
+		//// Texture
+		//commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
+		//// DirectionalLight
+		//commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
+		//// DrawCall
+		//commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 		//commandList->DrawInstanced(6, texture, 0, 0);
 #pragma endregion
 

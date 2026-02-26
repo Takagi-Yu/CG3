@@ -1,5 +1,5 @@
 #pragma once
-
+#include "DirectXCommon.h"
 #include "MyMath.h"
 #include <d3d12.h>
 #include <wrl.h>
@@ -35,7 +35,7 @@ public:
 	};
 
 public:
-	void Initialize(SpriteCommon *spriteCommon,const std::string& filePath);
+	void Initialize(SpriteCommon *spriteCommon,DirectXCommon *dxCommon);
 
 	void Update();
 
@@ -43,28 +43,40 @@ public:
 
 public:
 	void SetUseTexture(const std::string &filePath);
-	void SetUseTexture(uint32_t textureIndex) { useTextureIndex = textureIndex; }
+	void SetUseTexture(uint32_t textureIndex) { useTextureIndex_ = textureIndex; }
+	void SetSRVHandleGPU(D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU) { textureSrvHandleGPU_ = textureSrvHandleGPU; }
 
 private:
-	SpriteCommon *spriteCommonPtr = nullptr;
+	DirectXCommon *dxCommon_ = nullptr;
+	SpriteCommon *spriteCommon_ = nullptr;
 
-	Microsoft::WRL::ComPtr<ID3D12Resource>vertexResource = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource>indexResource = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource>materialResource = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource>transformationMatrixResource = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource>textureResource = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource>vertexResource_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource>indexResource_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource>materialResource_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource>transformationMatrixResource_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource>textureResource_ = nullptr;
 
-	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
-	D3D12_INDEX_BUFFER_VIEW indexBufferView{};
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
+	D3D12_INDEX_BUFFER_VIEW indexBufferView_{};
 
-	VertexData *vertexDataPtr = nullptr;
-	uint32_t *indexDataPtr = nullptr;
-	Material *materialDataPtr = nullptr;
-	TransformationMatrix *transformationMatrix = nullptr;
+	VertexData *vertexData_ = nullptr;
+	uint32_t *indexData_ = nullptr;
+	Material *materialData_ = nullptr;
+	TransformationMatrix *transformationMatrixData_ = nullptr;
 
-	uint32_t useTextureIndex = 0;
+	uint32_t useTextureIndex_ = 0;
 
-	Transform transform{};
-	Transform uvTransform{};
+	Transform transform_{};
+	Transform uvTransform_{};
+
+	const int32_t kClientWidth_ = 1280;
+	const int32_t kClientheight_ = 720;
+
+	ID3D12GraphicsCommandList *commandList_;
+
+	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU_;
+	ID3D12DescriptorHeap *srvHeap_ = nullptr;
+	uint32_t srvDescriptorSize_ = 0;
+
 };
 
