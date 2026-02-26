@@ -29,6 +29,8 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd,
 #include "DirectXCommon.h"
 #include "Logger.h"
 #include "StringUtility.h"
+#include "SpriteCommon.h"
+#include "Sprite.h"
 
 using namespace StringUtility;
 using namespace Logger;
@@ -41,31 +43,31 @@ using namespace Logger;
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "dxcompiler.lib")
 
-struct Vector2 {
-	float x;
-	float y;
-};
-
-struct Vector3 {
-	float x;
-	float y;
-	float z;
-};
-
-struct Vector4 {
-	float x;
-	float y;
-	float z;
-	float w;
-};
-
-struct Matrix3x3 {
-	float m[3][3];
-};
-
-struct Matrix4x4 {
-	float m[4][4];
-};
+//struct Vector2 {
+//	float x;
+//	float y;
+//};
+//
+//struct Vector3 {
+//	float x;
+//	float y;
+//	float z;
+//};
+//
+//struct Vector4 {
+//	float x;
+//	float y;
+//	float z;
+//	float w;
+//};
+//
+//struct Matrix3x3 {
+//	float m[3][3];
+//};
+//
+//struct Matrix4x4 {
+//	float m[4][4];
+//};
 
 struct Transform {
 	Vector3 scale;
@@ -850,6 +852,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	ID3D12GraphicsCommandList *commandList = dxCommon->GetCommandList();
 	ID3D12Device *device = dxCommon->GetDevice();
+
+	SpriteCommon *spriteCommon = nullptr;
+	spriteCommon = new SpriteCommon;
+	spriteCommon->Initialize(dxCommon);
+
+	Sprite *sprite = new Sprite();
+	sprite->Initialize(spriteCommon, logFilePath);
 
 	HRESULT hr;
 
@@ -1881,17 +1890,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//device->Release();
 
 	// リソースリークチェック
-	IDXGIDebug1 *debug;
-	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug)))) {
-		debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
-		debug->ReportLiveObjects(DXGI_DEBUG_APP, DXGI_DEBUG_RLO_ALL);
-		debug->ReportLiveObjects(DXGI_DEBUG_D3D12, DXGI_DEBUG_RLO_ALL);
-		debug->Release();
-	}
+	//IDXGIDebug1 *debug;
+	//if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug)))) {
+	//	debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+	//	debug->ReportLiveObjects(DXGI_DEBUG_APP, DXGI_DEBUG_RLO_ALL);
+	//	debug->ReportLiveObjects(DXGI_DEBUG_D3D12, DXGI_DEBUG_RLO_ALL);
+	//	debug->Release();
+	//}
 
 	//delete input;
 	delete winApp;
 	delete dxCommon;
+	delete spriteCommon;
+	delete sprite;
 
 	return 0;
 }
