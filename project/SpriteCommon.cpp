@@ -201,14 +201,18 @@ void SpriteCommon::Initialize(DirectXCommon *dxCommon)
 }
 
 void SpriteCommon::PreDraw() {
-
+	commandList_ = mDxCommonptr_->GetCommandList();
+	// RootSignatureを設定。PSOに設定しているけど別途設定が必要
+	commandList_->SetGraphicsRootSignature(rootSignature_.Get());
+	commandList_->SetPipelineState(graphicsPipelineState_.Get()); // PSOを設定
+	commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
 void SpriteCommon::CreateRootSignature()
 {
 	HRESULT hr;
 
-	ID3D12Device *device_ = mDxCommonptr_->GetDevice();
+	device_ = mDxCommonptr_->GetDevice();
 
 	// RootSignature作成
 	D3D12_ROOT_SIGNATURE_DESC descriptionRootSignature{};
@@ -281,7 +285,7 @@ void SpriteCommon::CreatePipeLineStateObject()
 {
 	HRESULT hr;
 
-	ID3D12Device *device_ = mDxCommonptr_->GetDevice();
+	device_ = mDxCommonptr_->GetDevice();
 
 	std::filesystem::create_directory("logs");
 
