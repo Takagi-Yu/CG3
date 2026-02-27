@@ -32,6 +32,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd,
 #include "SpriteCommon.h"
 #include "Sprite.h"
 #include "MyMath.h"
+#include "TextureManager.h"
 
 using namespace StringUtility;
 using namespace Logger;
@@ -118,7 +119,7 @@ struct ModelData {
 //	};
 //	return result;
 //}
-
+//
 //Matrix4x4 Multiply(const Matrix4x4 &m1, const Matrix4x4 m2) {
 //	Matrix4x4 result{};
 //
@@ -873,6 +874,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		sprites.push_back(sprite);
 	}
+
+	TextureManager *textureManager = nullptr;
+	textureManager->Initialize(dxCommon);
 
 	//HRESULT hr;
 
@@ -1872,6 +1876,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//CloseHandle(fenceEvent);
 
 	winApp->Finalize();
+	textureManager->Filalize();
 
 	//fence->Release();
 	//rtvDescriptorHeap->Release();
@@ -1933,5 +1938,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	for (uint32_t i = 0; i < 5; ++i) {
 	    delete sprites[i];
 	}
+
 	return 0;
 }

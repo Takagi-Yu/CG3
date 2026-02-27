@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <wrl.h>
 #include <string>
 #include <d3d12.h>
@@ -24,17 +24,17 @@ public:
 
 	void Filalize();
 private:
-	static uint32_t kSRVIndexTop;
-	static TextureManager *nInstance;
+	static uint32_t kSRVIndexTop_;
+	static TextureManager *instance_;
 
-	DirectXCommon *DxCommonPtr = nullptr;
+	DirectXCommon *dxCommonPtr_ = nullptr;
 
 	struct TextureData {
-		std::string filePath;
-		DirectX::TexMetadata metadata{};
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource = nullptr;
-		D3D12_CPU_DESCRIPTOR_HANDLE srvHandleCPU{};
-		D3D12_GPU_DESCRIPTOR_HANDLE srvHandleGPU{};
+		std::string filePath_;
+		DirectX::TexMetadata metadata_{};
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource_;
+		D3D12_CPU_DESCRIPTOR_HANDLE srvHandleCPU_{};
+		D3D12_GPU_DESCRIPTOR_HANDLE srvHandleGPU_{};
 	};
 
 	TextureManager() = default;
@@ -42,6 +42,6 @@ private:
 	TextureManager(TextureManager &) = default;
 	TextureManager &operator=(TextureManager &) = default;
 
-	std::vector<TextureData> textureDatas;
+	std::vector<TextureData> textureDatas_;
 };
 

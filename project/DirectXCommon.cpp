@@ -15,6 +15,7 @@ using namespace Microsoft::WRL;
 using namespace Logger;
 using namespace StringUtility;
 
+const uint32_t DirectXCommon::kMaxSRVCount = 512;
 
 void DirectXCommon::Initialize(WinApp* winApp) {
 	assert(winApp);
@@ -253,9 +254,10 @@ void DirectXCommon::CreateDescriptorHeap()
 	rtvDesc.NumDescriptors = 2; // バックバッファ数
 	rtvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
-	hr = device_->CreateDescriptorHeap(
-		&rtvDesc, IID_PPV_ARGS(&rtvHeap_));
-	assert(SUCCEEDED(hr));
+	rtvHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
+	//hr = device_->CreateDescriptorHeap(
+	//	&rtvDesc, IID_PPV_ARGS(&rtvHeap_));
+	//assert(SUCCEEDED(hr));
 
 	// DSV Heap
 	D3D12_DESCRIPTOR_HEAP_DESC dsvDesc{};
@@ -273,9 +275,10 @@ void DirectXCommon::CreateDescriptorHeap()
 	srvDesc.NumDescriptors = 128; // SRV数
 	srvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
-	hr = device_->CreateDescriptorHeap(
-		&srvDesc, IID_PPV_ARGS(&srvHeap_));
-	assert(SUCCEEDED(hr));
+	srvHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, kMaxSRVCount, true);
+	//hr = device_->CreateDescriptorHeap(
+	//	&srvDesc, IID_PPV_ARGS(&srvHeap_));
+	//assert(SUCCEEDED(hr));
 }
 
 void DirectXCommon::RenderTargetviewInitialize()
@@ -384,7 +387,7 @@ void DirectXCommon::ImGuiInitialize()
 		device_.Get(),                         // ID3D12Device*
 		swapChainDesc.BufferCount,             // バックバッファ数
 		DXGI_FORMAT_R8G8B8A8_UNORM,             // RTVフォーマット（元 rtvDesc.Format）
-		srvHeap_,                              // SRV DescriptorHeap
+		srvHeap_.Get(),                              // SRV DescriptorHeap
 		srvHeap_->GetCPUDescriptorHandleForHeapStart(),
 		srvHeap_->GetGPUDescriptorHandleForHeapStart()
 	);
@@ -420,7 +423,7 @@ void DirectXCommon::PreDraw()
 		1.0f, 0, 0, nullptr);
 
 	// 描画用のDescriptorHeapの設定
-	ID3D12DescriptorHeap *descriptorHeaps[] = { srvHeap_ };
+	ID3D12DescriptorHeap *descriptorHeaps[] = { srvHeap_.Get() };
 	commandList_->SetDescriptorHeaps(1, descriptorHeaps);
 
 	// 指定した色で画面全体をクリアする

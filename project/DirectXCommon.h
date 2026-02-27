@@ -56,6 +56,8 @@ public: // メンバ関数
 	
 	//std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, 2> *swapChainResources_;
 
+	static const uint32_t kMaxSRVCount;
+
 private: // メンバ変数
 	WinApp* winApp_ = nullptr;
 
@@ -74,9 +76,9 @@ private: // メンバ変数
 
 	ID3D12Resource* depthStencilResource_ = nullptr;
 
-	ID3D12DescriptorHeap* rtvHeap_ = nullptr;
-	ID3D12DescriptorHeap* dsvHeap_ = nullptr;
-	ID3D12DescriptorHeap* srvHeap_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvHeap_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvHeap_ = nullptr;
 
 	uint32_t rtvDescriptorSize_ = 0;
 	uint32_t dsvDescriptorSize_ = 0;
@@ -101,5 +103,6 @@ private: // メンバ変数
 	// FPS固定更新
 	void UpdateFixFPS();
 	std::chrono::steady_clock::time_point referrence_;
+
 };
 
