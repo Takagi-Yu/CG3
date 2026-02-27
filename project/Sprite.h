@@ -88,7 +88,7 @@ private:
 	uint32_t srvDescriptorSize_ = 0;
 
 	Vector2 position_ = { 0.0f,0.0f };
-	//float rotation_ = 0.0f;
+	float rotation_ = 0.0f;
 	Vector2 size_ = { 180.0f,180.0f };
 
 };
