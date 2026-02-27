@@ -858,8 +858,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	spriteCommon = new SpriteCommon;
 	spriteCommon->Initialize(dxCommon);
 
-	Sprite *sprite = new Sprite();
-	sprite->Initialize(spriteCommon,dxCommon);
+
+	//Sprite *sprite = new Sprite();
+	//sprite->Initialize(spriteCommon,dxCommon);
+
+	std::vector<Sprite*>sprites;
+	for (uint32_t i = 0; i < 5; ++i) {
+		Sprite *sprite = new Sprite();
+		sprite->Initialize(spriteCommon, dxCommon);
+
+		Vector2 position[5];
+		position[i] = { i * 200.0f, 0.0f };
+		sprite->SetPosition(position[i]);
+
+		sprites.push_back(sprite);
+	}
 
 	//HRESULT hr;
 
@@ -1575,7 +1588,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	device->CreateShaderResourceView(textureResource.Get(), &srvDesc,
 		textureSrvHandleCPU);
 
-	sprite->SetSRVHandleGPU(textureSrvHandleGPU);
+	for (uint32_t i = 0; i < 5; ++i) {
+	    sprites[i]->SetSRVHandleGPU(textureSrvHandleGPU);
+	}
 
 	//// DepthStencilTextureをウィンドウのサイズで作成
 	//ID3D12Resource *depthStencilResource =
@@ -1620,7 +1635,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//bool useMonsterBall = true;
 	bool texture = true;
 
-
+	
 	MSG msg{};
 	// ウィンドウの×ボタンが押されるまでループ
 	while (true/*msg.message != WM_QUIT*/) {
@@ -1671,7 +1686,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//transformationMatrixDataSphere->WVP = worldViewProjectionMatrix;
 		//transformationMatrixDataSphere->World = worldMatrix;
 
-		sprite->Update();
+		for (uint32_t i = 0; i < 5; ++i) {
+		    sprites[i]->Update();
+		}
 
 		// Sprite用のWorldProjectionMatrixを作る
 		Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
@@ -1778,7 +1795,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #pragma region Sprite Draw
 
-		sprite->Draw();
+		for (uint32_t i = 0; i < 5; ++i) {
+		    sprites[i]->Draw();
+		}
+		
 		// マテリアルCBufferの場所を設定
 		//commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // VBVを設定
 		//commandList->IASetIndexBuffer(&indexBufferViewSprite); // VBVを設定
@@ -1910,7 +1930,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	delete winApp;
 	delete dxCommon;
 	delete spriteCommon;
-	delete sprite;
-
+	for (uint32_t i = 0; i < 5; ++i) {
+	    delete sprites[i];
+	}
 	return 0;
 }

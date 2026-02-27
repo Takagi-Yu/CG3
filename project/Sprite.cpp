@@ -103,7 +103,46 @@ void Sprite::Update() {
     //transformationMatrixData_->World = worldMatrix;
       // Sprite用のWorldProjectionMatrixを作る
     Transform transformSprite{
-    {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+    {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {position_.x, position_.y, 0.0f} };
+    //transformSprite.translate = { position_.x, position_.y, 0.0f };
+    //position_ = GetPosition();
+    //position_.x += 0.1f;
+    //position_.y += 0.1f;
+    //SetPosition(position_);
+
+    //transformSprite.rotate = { 0.0f, 0.0f, rotation_ };
+    //rotation_ = GetRotation();
+    //rotation_ += 0.01f;
+    //SetRotation(rotation_);
+
+    //Vector4 color = GetColor();
+    //color.x += 0.01f;
+    //if (color.x > 1.0f) {
+    //    color.x -= 1.0f;
+    //}
+    //SetColor(color);
+    
+    vertexData_[0].position = { 0.0f, 1.0f, 0.0f, 1.0f };
+    vertexData_[0].texcoord = { 0.0f, 1.0f };
+    vertexData_[0].normal = { 0.0f, 0.0f, -1.0f };
+
+    vertexData_[1].position = { 0.0f, 0.0f, 0.0f, 1.0f };
+    vertexData_[1].texcoord = { 0.0f, 0.0f };
+    vertexData_[1].normal = { 0.0f, 0.0f, -1.0f };
+
+    vertexData_[2].position = { 1.0f, 1.0f, 0.0f, 1.0f };
+    vertexData_[2].texcoord = { 1.0f, 1.0f };
+    vertexData_[2].normal = { 0.0f, 0.0f, -1.0f };
+
+    vertexData_[3].position = { 1.0f, 0.0f, 0.0f, 1.0f };
+    vertexData_[3].texcoord = { 1.0f, 0.0f };
+    vertexData_[3].normal = { 0.0f, 0.0f, -1.0f };
+
+    transformSprite.scale = { size_.x, size_.y, 1.0f };
+    size_ = GetSize();
+    //size_.x += 0.1f;
+    //size_.y += 0.1f;
+    SetSize(size_);
 
     Matrix4x4 worldMatrixSprite =
         MakeAffineMatrix(transformSprite.scale, transformSprite.rotate,
