@@ -866,7 +866,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	std::vector<Sprite*>sprites;
 	for (uint32_t i = 0; i < 5; ++i) {
 		Sprite *sprite = new Sprite();
-		sprite->Initialize(spriteCommon, dxCommon);
+		sprite->Initialize(spriteCommon, dxCommon, logFilePath);
 
 		Vector2 position[5];
 		position[i] = { i * 200.0f, 0.0f };

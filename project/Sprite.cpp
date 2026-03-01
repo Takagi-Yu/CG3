@@ -1,6 +1,6 @@
 ﻿#include "Sprite.h"
 
-void Sprite::Initialize(SpriteCommon *spriteCommon, DirectXCommon *dxCommon)
+void Sprite::Initialize(SpriteCommon *spriteCommon, DirectXCommon *dxCommon, std::string textureFilePath)
 {
 	spriteCommon_ = spriteCommon;
     dxCommon_ = dxCommon;
@@ -74,6 +74,8 @@ void Sprite::Initialize(SpriteCommon *spriteCommon, DirectXCommon *dxCommon)
 
     transformationMatrixData_->WVP = MakeIdentity4x4();
     transformationMatrixData_->World = MakeIdentity4x4();
+
+    useTextureIndex_ = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
 }
 
 void Sprite::Update() {
@@ -168,7 +170,7 @@ void Sprite::Draw()
     // TransformationMatrix
     commandList_->SetGraphicsRootConstantBufferView(1, transformationMatrixResource_->GetGPUVirtualAddress());
     // Texture
-    commandList_->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU_);
+    commandList_->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(useTextureIndex_));
     // DrawCall
     commandList_->DrawIndexedInstanced(6, 1, 0, 0, 0);
 }

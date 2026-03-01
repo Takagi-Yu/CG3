@@ -701,7 +701,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateTextureResource(cons
 	//return Microsoft::WRL::ComPtr<ID3D12Resource>();
 }
 
-void DirectXCommon::UploadTextureData(
+Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::UploadTextureData(
 	const Microsoft::WRL::ComPtr<ID3D12Resource> &texture, const DirectX::ScratchImage &mipImages)
 {
 	/*D3D12_HEAP_PROPERTIES heapProperties{};
@@ -734,7 +734,7 @@ void DirectXCommon::UploadTextureData(
 	WaitForSignal();
 	CommandReset();
 
-	//return intermediateResource;
+	return intermediateResource;
 }
 
 DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string &filePath)

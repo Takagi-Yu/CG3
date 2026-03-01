@@ -23,6 +23,7 @@ public:
 	D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandleGPU(uint32_t textureIndex);
 
 	void Filalize();
+
 private:
 	static uint32_t kSRVIndexTop_;
 	static TextureManager *instance_;
@@ -43,5 +44,8 @@ private:
 	TextureManager &operator=(TextureManager &) = default;
 
 	std::vector<TextureData> textureDatas_;
+
+	ID3D12Device *device_;
+	ID3D12GraphicsCommandList *commandList_;
 };
 

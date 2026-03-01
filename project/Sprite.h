@@ -1,6 +1,7 @@
 #pragma once
 #include "DirectXCommon.h"
 #include "MyMath.h"
+#include "TextureManager.h"
 #include <d3d12.h>
 #include <wrl.h>
 #include <string>
@@ -35,7 +36,7 @@ public:
 	};
 
 public:
-	void Initialize(SpriteCommon *spriteCommon,DirectXCommon *dxCommon);
+	void Initialize(SpriteCommon *spriteCommon,DirectXCommon *dxCommon, std::string textureFilePath);
 
 	void Update();
 
