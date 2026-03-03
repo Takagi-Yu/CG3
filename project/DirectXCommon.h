@@ -65,7 +65,7 @@ private: // メンバ変数
 
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory_;
 
-	ID3D12CommandAllocator* commandAllocator_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_;
 	ID3D12CommandQueue* commandQueue_ = nullptr;
 
@@ -74,7 +74,7 @@ private: // メンバ変数
 	int32_t width_ = 1280;
 	int32_t height_ = 720;
 
-	ID3D12Resource* depthStencilResource_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilResource_ = nullptr;
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvHeap_ = nullptr;
@@ -84,7 +84,7 @@ private: // メンバ変数
 	uint32_t dsvDescriptorSize_ = 0;
 	uint32_t srvDescriptorSize_ = 0;
 
-	ID3D12Resource* swapChainResources_[2];
+	Microsoft::WRL::ComPtr<ID3D12Resource> swapChainResources_[2];
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles_[2];
 
 	D3D12_VIEWPORT viewport_{};
@@ -94,7 +94,7 @@ private: // メンバ変数
 	IDxcCompiler3 *dxcCompiler_ = nullptr;
 	IDxcIncludeHandler *includeHandler_ = nullptr;
 
-	ID3D12Fence *fence_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Fence> fence_ = nullptr;
 	UINT64 fenceVal_ = 0;
 	HANDLE fenceEvent_ = {};
 
@@ -103,6 +103,5 @@ private: // メンバ変数
 	// FPS固定更新
 	void UpdateFixFPS();
 	std::chrono::steady_clock::time_point referrence_;
-
 };
 

@@ -44,8 +44,6 @@ void Sprite::Initialize(SpriteCommon *spriteCommon, DirectXCommon *dxCommon, std
 
     vertexData_[0].normal = { 0.0f, 0.0f, -1.0f };
 
-
-
     // インデックスリソースにデータを書き込む
     indexResource_->Map(0, nullptr,
         reinterpret_cast<void **>(&indexData_));
@@ -81,50 +79,12 @@ void Sprite::Initialize(SpriteCommon *spriteCommon, DirectXCommon *dxCommon, std
 }
 
 void Sprite::Update() {
-
-
-
-
-    //textureSrvHandleGPU_ =
-    //    dxCommon_->GetGPUDescriptorHandle(srvHeap_, srvDescriptorSize_, 2);
-
     Transform transform{
     {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
     Transform cameraTransform{
     {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -5.0f} };
-
-    //Matrix4x4 worldMatrix = MakeAffineMatrix(
-    //    transform.scale, transform.rotate, transform.translate);
-    //Matrix4x4 cameraMatrix =
-    //    MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate,
-    //        cameraTransform.translate);
-    //Matrix4x4 viewMatrix = Inverse(cameraMatrix);
-    //Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(
-    //    0.45f, float(kClientWidth_) / float(kClientheight_), 0.1f, 100.0f);
-    //Matrix4x4 worldViewProjectionMatrix =
-    //    Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
-    //transformationMatrixData_->WVP = worldViewProjectionMatrix;
-    //transformationMatrixData_->World = worldMatrix;
-      // Sprite用のWorldProjectionMatrixを作る
     Transform transformSprite{
     {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {position_.x, position_.y, 0.0f} };
-    //transformSprite.translate = { position_.x, position_.y, 0.0f };
-    //position_ = GetPosition();
-    //position_.x += 0.1f;
-    //position_.y += 0.1f;
-    //SetPosition(position_);
-
-    //transformSprite.rotate = { 0.0f, 0.0f, rotation_ };
-    //rotation_ = GetRotation();
-    //rotation_ += 0.01f;
-    //SetRotation(rotation_);
-
-    //Vector4 color = GetColor();
-    //color.x += 0.01f;
-    //if (color.x > 1.0f) {
-    //    color.x -= 1.0f;
-    //}
-    //SetColor(color);
 
     float left = 0.0f - anchorPoint_.x;
     float right = 1.0f - anchorPoint_.x;
@@ -165,8 +125,6 @@ void Sprite::Update() {
 
     transformSprite.scale = { size_.x, size_.y, 1.0f };
     size_ = GetSize();
-    //size_.x += 0.1f;
-    //size_.y += 0.1f;
     SetSize(size_);
 
     Matrix4x4 worldMatrixSprite =

@@ -6,7 +6,6 @@
 
 #include "externals/DirectXTex/DirectXTex.h"
 
-
 class DirectXCommon;
 
 class TextureManager
@@ -47,7 +46,7 @@ private:
 
 	std::vector<TextureData> textureDatas_;
 
-	ID3D12Device *device_;
-	ID3D12GraphicsCommandList *commandList_;
+	Microsoft::WRL::ComPtr<ID3D12Device> device_;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_;
 };
 

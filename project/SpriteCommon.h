@@ -30,8 +30,7 @@ private:
 	Microsoft::WRL::ComPtr<IDxcBlob>vertexShaderBlob_ = nullptr;
 	Microsoft::WRL::ComPtr<IDxcBlob>pixelShaderBlob_ = nullptr;
 
-	ID3D12Device *device_;
-	ID3D12GraphicsCommandList *commandList_;
-
+	Microsoft::WRL::ComPtr<ID3D12Device> device_;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_;
 };
 

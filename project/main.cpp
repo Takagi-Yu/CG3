@@ -1,28 +1,19 @@
-﻿//#include <Windows.h>
-//#include <chrono>
-#include <cstdint>
+﻿#include <cstdint>
 #include <filesystem>
-//#include <format>
 #include <fstream>
 #include <string>
 #include <d3d12.h>
-//#include <dxgi1_6.h>
-//#include <cassert>
 #include <DbgHelp.h>
 #include <strsafe.h>
 #include <dxgidebug.h>
-//#include <dxcapi.h>
 #include <sstream>
-//#include "externals/imgui/imgui.h"
 #include "externals/imgui/imgui_impl_dx12.h"
 #include "externals/imgui/imgui_impl_win32.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd,
 	UINT msg,
 	WPARAM wParam,
 	LPARAM lParam);
-#include "externals/DirectXTex/DirectXTex.h"
 #include "externals/DirectXTex/d3dx12.h"
-#include <vector>
 
 #include "Input.h"
 #include "WinApp.h"
@@ -39,11 +30,7 @@ using namespace Logger;
 
 #define M_PI 3.141592f  
 
-//#pragma comment(lib, "d3d12.lib")
-//#pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "Dbghelp.lib")
-#pragma comment(lib, "dxguid.lib")
-#pragma comment(lib, "dxcompiler.lib")
 
 struct Transform {
 	Vector3 scale;
@@ -84,305 +71,6 @@ struct ModelData {
 	MaterialData material;
 };
 
-//Matrix4x4 MakeIdentity4x4() {
-//	Matrix4x4 result = {
-//		1, 0, 0, 0,
-//		0, 1, 0, 0,
-//		0, 0, 1, 0,
-//		0, 0, 0, 1
-//	};
-//	return result;
-//}
-//
-//Matrix4x4 Multiply(const Matrix4x4 &m1, const Matrix4x4 m2) {
-//	Matrix4x4 result{};
-//
-//	result.m[0][0] = m1.m[0][0] * m2.m[0][0] + m1.m[0][1] * m2.m[1][0] +
-//		m1.m[0][2] * m2.m[2][0] + m1.m[0][3] * m2.m[3][0];
-//	result.m[0][1] = m1.m[0][0] * m2.m[0][1] + m1.m[0][1] * m2.m[1][1] +
-//		m1.m[0][2] * m2.m[2][1] + m1.m[0][3] * m2.m[3][1];
-//	result.m[0][2] = m1.m[0][0] * m2.m[0][2] + m1.m[0][1] * m2.m[1][2] +
-//		m1.m[0][2] * m2.m[2][2] + m1.m[0][3] * m2.m[3][2];
-//	result.m[0][3] = m1.m[0][0] * m2.m[0][3] + m1.m[0][1] * m2.m[1][3] +
-//		m1.m[0][2] * m2.m[2][3] + m1.m[0][3] * m2.m[3][3];
-//	result.m[1][0] = m1.m[1][0] * m2.m[0][0] + m1.m[1][1] * m2.m[1][0] +
-//		m1.m[1][2] * m2.m[2][0] + m1.m[1][3] * m2.m[3][0];
-//	result.m[1][1] = m1.m[1][0] * m2.m[0][1] + m1.m[1][1] * m2.m[1][1] +
-//		m1.m[1][2] * m2.m[2][1] + m1.m[1][3] * m2.m[3][1];
-//	result.m[1][2] = m1.m[1][0] * m2.m[0][2] + m1.m[1][1] * m2.m[1][2] +
-//		m1.m[1][2] * m2.m[2][2] + m1.m[1][3] * m2.m[3][2];
-//	result.m[1][3] = m1.m[1][0] * m2.m[0][3] + m1.m[1][1] * m2.m[1][3] +
-//		m1.m[1][2] * m2.m[2][3] + m1.m[1][3] * m2.m[3][3];
-//	result.m[2][0] = m1.m[2][0] * m2.m[0][0] + m1.m[2][1] * m2.m[1][0] +
-//		m1.m[2][2] * m2.m[2][0] + m1.m[2][3] * m2.m[3][0];
-//	result.m[2][1] = m1.m[2][0] * m2.m[0][1] + m1.m[2][1] * m2.m[1][1] +
-//		m1.m[2][2] * m2.m[2][1] + m1.m[2][3] * m2.m[3][1];
-//	result.m[2][2] = m1.m[2][0] * m2.m[0][2] + m1.m[2][1] * m2.m[1][2] +
-//		m1.m[2][2] * m2.m[2][2] + m1.m[2][3] * m2.m[3][2];
-//	result.m[2][3] = m1.m[2][0] * m2.m[0][3] + m1.m[2][1] * m2.m[1][3] +
-//		m1.m[2][2] * m2.m[2][3] + m1.m[2][3] * m2.m[3][3];
-//	result.m[3][0] = m1.m[3][0] * m2.m[0][0] + m1.m[3][1] * m2.m[1][0] +
-//		m1.m[3][2] * m2.m[2][0] + m1.m[3][3] * m2.m[3][0];
-//	result.m[3][1] = m1.m[3][0] * m2.m[0][1] + m1.m[3][1] * m2.m[1][1] +
-//		m1.m[3][2] * m2.m[2][1] + m1.m[3][3] * m2.m[3][1];
-//	result.m[3][2] = m1.m[3][0] * m2.m[0][2] + m1.m[3][1] * m2.m[1][2] +
-//		m1.m[3][2] * m2.m[2][2] + m1.m[3][3] * m2.m[3][2];
-//	result.m[3][3] = m1.m[3][0] * m2.m[0][3] + m1.m[3][1] * m2.m[1][3] +
-//		m1.m[3][2] * m2.m[2][3] + m1.m[3][3] * m2.m[3][3];
-//
-//	return result;
-//}
-//
-//Matrix4x4 MakeRotateXMatrix(float radian) {
-//	Matrix4x4 result{
-//		1, 0, 0, 0,
-//		0, cosf(radian), sinf(radian), 0,
-//		0, -sinf(radian), cosf(radian), 0,
-//		0, 0, 0, 1
-//	};
-//	return result;
-//}
-//
-//Matrix4x4 MakeRotateYMatrix(float radian) {
-//	Matrix4x4 result{
-//		cosf(radian), 0, -sinf(radian), 0,
-//		0, 1, 0, 0,
-//		sinf(radian), 0, cosf(radian),  0,
-//		0, 0, 0, 1
-//	};
-//	return result;
-//}
-//
-//Matrix4x4 MakeRotateZMatrix(float radian) {
-//	Matrix4x4 result{
-//		cosf(radian), sinf(radian), 0, 0,
-//		-sinf(radian), cosf(radian), 0, 0,
-//		0, 0, 1, 0,
-//		0, 0, 0, 1
-//	};
-//	return result;
-//}
-//
-//Matrix4x4 MakeScaleMatrix(Vector3 scale) {
-//	Matrix4x4 result{
-//		scale.x, 0.0f, 0.0f, 0.0f,
-//		0.0f, scale.y, 0.0f, 0.0f,
-//		0.0f, 0.0f, scale.z, 0.0f,
-//		0.0f, 0.0f, 0.0f, 1.0f
-//	};
-//	return result;
-//}
-//
-//Matrix4x4 MakeTranslateMatrix(Vector3 translate) {
-//	Matrix4x4 result{
-//		1.0f, 0.0f, 0.0f, 0.0f,
-//		0.0f, 1.0f, 0.0f, 0.0f,
-//		0.0f, 0.0f, 1.0f, 0.0f,
-//		translate.x, translate.y, translate.z, 1.0f
-//	};
-//	return result;
-//}
-//
-//Matrix4x4 MakeAffineMatrix(const Vector3 &scale, const Vector3 &rotate,
-//	const Vector3 &translate) {
-//	Matrix4x4 result;
-//
-//	Matrix4x4 rotateXMatrix = MakeRotateXMatrix(rotate.x);
-//
-//	Matrix4x4 rotateYMatrix = MakeRotateYMatrix(rotate.y);
-//
-//	Matrix4x4 rotateZMatrix = MakeRotateZMatrix(rotate.z);
-//
-//	Matrix4x4 rotateXYZMatrix =
-//		Multiply(rotateXMatrix, Multiply(rotateYMatrix, rotateZMatrix));
-//
-//	for (int i = 0; i < 3; i++) {
-//		result.m[0][i] = scale.x * rotateXYZMatrix.m[0][i];
-//	}
-//	result.m[0][3] = 0;
-//
-//	for (int i = 0; i < 3; i++) {
-//		result.m[1][i] = scale.y * rotateXYZMatrix.m[1][i];
-//	}
-//	result.m[1][3] = 0;
-//
-//	for (int i = 0; i < 3; i++) {
-//		result.m[2][i] = scale.z * rotateXYZMatrix.m[2][i];
-//	}
-//	result.m[2][3] = 0;
-//
-//	result.m[3][0] = translate.x;
-//	result.m[3][1] = translate.y;
-//	result.m[3][2] = translate.z;
-//	result.m[3][3] = 1;
-//
-//	return result;
-//}
-//
-//// 透視投影行列
-//Matrix4x4 MakePerspectiveFovMatrix(float fovY, float aspectRatio,
-//	float nearClip, float farClip) {
-//	Matrix4x4 result;
-//
-//	result.m[0][0] = (1.0f / aspectRatio) * (1.0f / tanf(fovY / 2.0f));
-//	result.m[0][1] = 0.0f;
-//	result.m[0][2] = 0.0f;
-//	result.m[0][3] = 0.0f;
-//	result.m[1][0] = 0.0f;
-//	result.m[1][1] = 1.0f / tanf(fovY / 2.0f);
-//	result.m[1][2] = 0.0f;
-//	result.m[1][3] = 0.0f;
-//	result.m[2][0] = 0.0f;
-//	result.m[2][1] = 0.0f;
-//	result.m[2][2] = farClip / (farClip - nearClip);
-//	result.m[2][3] = 1.0f;
-//	result.m[3][0] = 0.0f;
-//	result.m[3][1] = 0.0f;
-//	result.m[3][2] = -nearClip * farClip / (farClip - nearClip);
-//	result.m[3][3] = 0.0f;
-//
-//	return result;
-//}
-//
-//Matrix4x4 MakeOrthographicMatrix(float left, float top, float right,
-//	float bottom, float nearClip, float farClip) {
-//	Matrix4x4 result;
-//
-//	result.m[0][0] = 2.0f / (right - left);
-//	result.m[0][1] = 0.0f;
-//	result.m[0][2] = 0.0f;
-//	result.m[0][3] = 0.0f;
-//	result.m[1][0] = 0.0f;
-//	result.m[1][1] = 2.0f / (top - bottom);
-//	result.m[1][2] = 0.0f;
-//	result.m[1][3] = 0.0f;
-//	result.m[2][0] = 0.0f;
-//	result.m[2][1] = 0.0f;
-//	result.m[2][2] = 1.0f / (farClip - nearClip);
-//	result.m[2][3] = 0.0f;
-//	result.m[3][0] = (left + right) / (left - right);
-//	result.m[3][1] = (top + bottom) / (bottom - top);
-//	result.m[3][2] = nearClip / (nearClip - farClip);
-//	result.m[3][3] = 1.0f;
-//
-//	return result;
-//}
-//
-//// 逆行列
-//Matrix4x4 Inverse(const Matrix4x4 &m) {
-//	Matrix4x4 result;
-//	float A = m.m[0][0] * m.m[1][1] * m.m[2][2] * m.m[3][3] +
-//		m.m[0][0] * m.m[1][2] * m.m[2][3] * m.m[3][1] +
-//		m.m[0][0] * m.m[1][3] * m.m[2][1] * m.m[3][2] - // 3
-//		m.m[0][0] * m.m[1][3] * m.m[2][2] * m.m[3][1] -
-//		m.m[0][0] * m.m[1][2] * m.m[2][1] * m.m[3][3] -
-//		m.m[0][0] * m.m[1][1] * m.m[2][3] * m.m[3][2] - // 6
-//		m.m[0][1] * m.m[1][0] * m.m[2][2] * m.m[3][3] -
-//		m.m[0][2] * m.m[1][0] * m.m[2][3] * m.m[3][1] -
-//		m.m[0][3] * m.m[1][0] * m.m[2][1] * m.m[3][2] + // 9
-//		m.m[0][3] * m.m[1][0] * m.m[2][2] * m.m[3][1] +
-//		m.m[0][2] * m.m[1][0] * m.m[2][1] * m.m[3][3] +
-//		m.m[0][1] * m.m[1][0] * m.m[2][3] * m.m[3][2] + // 12
-//		m.m[0][1] * m.m[1][2] * m.m[2][0] * m.m[3][3] +
-//		m.m[0][2] * m.m[1][3] * m.m[2][0] * m.m[3][1] +
-//		m.m[0][3] * m.m[1][1] * m.m[2][0] * m.m[3][2] - // 15
-//		m.m[0][3] * m.m[1][2] * m.m[2][0] * m.m[3][1] -
-//		m.m[0][2] * m.m[1][1] * m.m[2][0] * m.m[3][3] -
-//		m.m[0][1] * m.m[1][3] * m.m[2][0] * m.m[3][2] - // 18
-//		m.m[0][1] * m.m[1][2] * m.m[2][3] * m.m[3][0] -
-//		m.m[0][2] * m.m[1][3] * m.m[2][1] * m.m[3][0] -
-//		m.m[0][3] * m.m[1][1] * m.m[2][2] * m.m[3][0] + // 21
-//		m.m[0][3] * m.m[1][2] * m.m[2][1] * m.m[3][0] +
-//		m.m[0][2] * m.m[1][1] * m.m[2][3] * m.m[3][0] +
-//		m.m[0][1] * m.m[1][3] * m.m[2][2] * m.m[3][0]; // 24
-//
-//	result.m[0][0] =
-//		1 / A *
-//		(m.m[1][1] * m.m[2][2] * m.m[3][3] + m.m[1][2] * m.m[2][3] * m.m[3][1] +
-//			m.m[1][3] * m.m[2][1] * m.m[3][2] - m.m[1][3] * m.m[2][2] * m.m[3][1] -
-//			m.m[1][2] * m.m[2][1] * m.m[3][3] - m.m[1][1] * m.m[2][3] * m.m[3][2]);
-//	result.m[0][1] =
-//		1 / A *
-//		(-m.m[0][1] * m.m[2][2] * m.m[3][3] - m.m[0][2] * m.m[2][3] * m.m[3][1] -
-//			m.m[0][3] * m.m[2][1] * m.m[3][2] + m.m[0][3] * m.m[2][2] * m.m[3][1] +
-//			m.m[0][2] * m.m[2][1] * m.m[3][3] + m.m[0][1] * m.m[2][3] * m.m[3][2]);
-//	result.m[0][2] =
-//		1 / A *
-//		(m.m[0][1] * m.m[1][2] * m.m[3][3] + m.m[0][2] * m.m[1][3] * m.m[3][1] +
-//			m.m[0][3] * m.m[1][1] * m.m[3][2] - m.m[0][3] * m.m[1][2] * m.m[3][1] -
-//			m.m[0][2] * m.m[1][1] * m.m[3][3] - m.m[0][1] * m.m[1][3] * m.m[3][2]);
-//	result.m[0][3] =
-//		1 / A *
-//		(-m.m[0][1] * m.m[1][2] * m.m[2][3] - m.m[0][2] * m.m[1][3] * m.m[2][1] -
-//			m.m[0][3] * m.m[1][1] * m.m[2][2] + m.m[0][3] * m.m[1][2] * m.m[2][1] +
-//			m.m[0][2] * m.m[1][1] * m.m[2][3] + m.m[0][1] * m.m[1][3] * m.m[2][2]);
-//
-//	result.m[1][0] =
-//		1 / A *
-//		(-m.m[1][0] * m.m[2][2] * m.m[3][3] - m.m[1][2] * m.m[2][3] * m.m[3][0] -
-//			m.m[1][3] * m.m[2][0] * m.m[3][2] + m.m[1][3] * m.m[2][2] * m.m[3][0] +
-//			m.m[1][2] * m.m[2][0] * m.m[3][3] + m.m[1][0] * m.m[2][3] * m.m[3][2]);
-//	result.m[1][1] =
-//		1 / A *
-//		(m.m[0][0] * m.m[2][2] * m.m[3][3] + m.m[0][2] * m.m[2][3] * m.m[3][0] +
-//			m.m[0][3] * m.m[2][0] * m.m[3][2] - m.m[0][3] * m.m[2][2] * m.m[3][0] -
-//			m.m[0][2] * m.m[2][0] * m.m[3][3] - m.m[0][0] * m.m[2][3] * m.m[3][2]);
-//	result.m[1][2] =
-//		1 / A *
-//		(-m.m[0][0] * m.m[1][2] * m.m[3][3] - m.m[0][2] * m.m[1][3] * m.m[3][0] -
-//			m.m[0][3] * m.m[1][0] * m.m[3][2] + m.m[0][3] * m.m[1][2] * m.m[3][0] +
-//			m.m[0][2] * m.m[1][0] * m.m[3][3] + m.m[0][0] * m.m[1][3] * m.m[3][2]);
-//	result.m[1][3] =
-//		1 / A *
-//		(m.m[0][0] * m.m[1][2] * m.m[2][3] + m.m[0][2] * m.m[1][3] * m.m[2][0] +
-//			m.m[0][3] * m.m[1][0] * m.m[2][2] - m.m[0][3] * m.m[1][2] * m.m[2][0] -
-//			m.m[0][2] * m.m[1][0] * m.m[2][3] - m.m[0][0] * m.m[1][3] * m.m[2][2]);
-//
-//	result.m[2][0] =
-//		1 / A *
-//		(m.m[1][0] * m.m[2][1] * m.m[3][3] + m.m[1][1] * m.m[2][3] * m.m[3][0] +
-//			m.m[1][3] * m.m[2][0] * m.m[3][1] - m.m[1][3] * m.m[2][1] * m.m[3][0] -
-//			m.m[1][1] * m.m[2][0] * m.m[3][3] - m.m[1][0] * m.m[2][3] * m.m[3][1]);
-//	result.m[2][1] =
-//		1 / A *
-//		(-m.m[0][0] * m.m[2][1] * m.m[3][3] - m.m[0][1] * m.m[2][3] * m.m[3][0] -
-//			m.m[0][3] * m.m[2][0] * m.m[3][1] + m.m[0][3] * m.m[2][1] * m.m[3][0] +
-//			m.m[0][1] * m.m[2][0] * m.m[3][3] + m.m[0][0] * m.m[2][3] * m.m[3][1]);
-//	result.m[2][2] =
-//		1 / A *
-//		(m.m[0][0] * m.m[1][1] * m.m[3][3] + m.m[0][1] * m.m[1][3] * m.m[3][0] +
-//			m.m[0][3] * m.m[1][0] * m.m[3][1] - m.m[0][3] * m.m[1][1] * m.m[3][0] -
-//			m.m[0][1] * m.m[1][0] * m.m[3][3] - m.m[0][0] * m.m[1][3] * m.m[3][1]);
-//	result.m[2][3] =
-//		1 / A *
-//		(-m.m[0][0] * m.m[1][1] * m.m[2][3] - m.m[0][1] * m.m[1][3] * m.m[2][0] -
-//			m.m[0][3] * m.m[1][0] * m.m[2][1] + m.m[0][3] * m.m[1][1] * m.m[2][0] +
-//			m.m[0][1] * m.m[1][0] * m.m[2][3] + m.m[0][0] * m.m[1][3] * m.m[2][1]);
-//
-//	result.m[3][0] =
-//		1 / A *
-//		(-m.m[1][0] * m.m[2][1] * m.m[3][2] - m.m[1][1] * m.m[2][2] * m.m[3][0] -
-//			m.m[1][2] * m.m[2][0] * m.m[3][1] + m.m[1][2] * m.m[2][1] * m.m[3][0] +
-//			m.m[1][1] * m.m[2][0] * m.m[3][2] + m.m[1][0] * m.m[2][2] * m.m[3][1]);
-//	result.m[3][1] =
-//		1 / A *
-//		(m.m[0][0] * m.m[2][1] * m.m[3][2] + m.m[0][1] * m.m[2][2] * m.m[3][0] +
-//			m.m[0][2] * m.m[2][0] * m.m[3][1] - m.m[0][2] * m.m[2][1] * m.m[3][0] -
-//			m.m[0][1] * m.m[2][0] * m.m[3][2] - m.m[0][0] * m.m[2][2] * m.m[3][1]);
-//	result.m[3][2] =
-//		1 / A *
-//		(-m.m[0][0] * m.m[1][1] * m.m[3][2] - m.m[0][1] * m.m[1][2] * m.m[3][0] -
-//			m.m[0][2] * m.m[1][0] * m.m[3][1] + m.m[0][2] * m.m[1][1] * m.m[3][0] +
-//			m.m[0][1] * m.m[1][0] * m.m[3][2] + m.m[0][0] * m.m[1][2] * m.m[3][1]);
-//	result.m[3][3] =
-//		1 / A *
-//		(m.m[0][0] * m.m[1][1] * m.m[2][2] + m.m[0][1] * m.m[1][2] * m.m[2][0] +
-//			m.m[0][2] * m.m[1][0] * m.m[2][1] - m.m[0][2] * m.m[1][1] * m.m[2][0] -
-//			m.m[0][1] * m.m[1][0] * m.m[2][2] - m.m[0][0] * m.m[1][2] * m.m[2][1]);
-//
-//	return result;
-//}
-
 static LONG WINAPI ExportDump(EXCEPTION_POINTERS *exception) {
 	// 時刻を取得して、時刻を名前に入れたファイルを作成。Dumpディレクトリ以下に出力
 	SYSTEMTIME time;
@@ -407,57 +95,6 @@ static LONG WINAPI ExportDump(EXCEPTION_POINTERS *exception) {
 		MiniDumpNormal, &maindumpInformation, nullptr, nullptr);
 	// ほかに関連付けられているSEH例外ハンドラがあれば実行。通常はプロセスする
 	return EXCEPTION_EXECUTE_HANDLER;
-}
-
-ID3D12Resource *CreateDepthStencilTextureResource(ID3D12Device *device,
-	int32_t width,
-	int32_t height) {
-	// 生成するResourceの設定
-	D3D12_RESOURCE_DESC resourceDesc{};
-	resourceDesc.Width = width; // Textureの幅
-	resourceDesc.Height = height; // Textureの高さ
-	resourceDesc.MipLevels = 1; // mipmapの数
-	resourceDesc.DepthOrArraySize = 1; // 奥行き or 配列Textureの配列数
-	resourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; // DepthStencilとして利用可能なフォーマット
-	resourceDesc.SampleDesc.Count = 1; // サンプリングカウント。1固定。
-	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D; // 2次元
-	resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL; // DepthStencilとして使う通知
-
-	// 利用するHeapの設定
-	D3D12_HEAP_PROPERTIES heapProperties{};
-	heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT; // VRAM上に作る
-
-	// 深度値のクリア
-	D3D12_CLEAR_VALUE depthClearValue{};
-	depthClearValue.DepthStencil.Depth = 1.0f;
-	depthClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-
-	// Rsourceの生成
-	ID3D12Resource *resource = nullptr;
-	HRESULT hr = device->CreateCommittedResource(
-		&heapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc,
-		D3D12_RESOURCE_STATE_DEPTH_WRITE, &depthClearValue,
-		IID_PPV_ARGS(&resource));
-	assert(SUCCEEDED(hr));
-	return resource;
-}
-
-D3D12_CPU_DESCRIPTOR_HANDLE
-GetCPUDescriptorHandle(ID3D12DescriptorHeap *descriptorHeap,
-	uint32_t descriptorSize, uint32_t index) {
-	D3D12_CPU_DESCRIPTOR_HANDLE handleCPU =
-		descriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	handleCPU.ptr += (descriptorSize * index);
-	return handleCPU;
-}
-
-D3D12_GPU_DESCRIPTOR_HANDLE
-GetGPUDescriptorHandle(ID3D12DescriptorHeap *descriptorHeap,
-	uint32_t descriptorSize, uint32_t index) {
-	D3D12_GPU_DESCRIPTOR_HANDLE handleGPU =
-		descriptorHeap->GetGPUDescriptorHandleForHeapStart();
-	handleGPU.ptr += (descriptorSize * index);
-	return handleGPU;
 }
 
 MaterialData LoadMaterialTemplateFile(const std::string &directoryPath, const std::string &filename) {
@@ -583,7 +220,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ID3D12GraphicsCommandList *commandList = dxCommon->GetCommandList();
 	ID3D12Device *device = dxCommon->GetDevice();
 
-	//TextureManager *textureManager = nullptr;
 	TextureManager::GetInstance()->Initialize(dxCommon);
 
 	TextureManager::GetInstance()->LoadTexture("Resources/uvChecker.png");
@@ -621,8 +257,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	materialData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	materialData->enableLighting = true;
 	materialData->uvTransform = MakeIdentity4x4();
-
-
 
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource =
@@ -669,7 +303,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	std::memcpy(modelVertexData, modelData.vertices.data(), sizeof(VertexData) * modelData.vertices.size()); // 頂点リソースにコピー
 
 #pragma endregion
-
 
 
 #pragma region Sphere
@@ -752,8 +385,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			uint32_t lt =
 				(latIndex + 1) * (kSubdivision + 1) + lonIndex; // 左上のインデックス
 			uint32_t rt = lt + 1;                               // 右上のインデックス
-
-
 
 			sphereIndexData[start + 0] = lb;
 			sphereIndexData[start + 1] = lt;
@@ -850,26 +481,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{0.0f, 0.0f, 0.0f},
 	};
 #pragma endregion 
-	//vertexDataSprite[0].normal = { 0.0f, 0.0f, -1.0f };
-
-	// ビューポート
-	D3D12_VIEWPORT viewport{};
-	// クライアント領域のサイズと一緒にして画面全体に表示
-	viewport.Width = WinApp::kClientWidth_;
-	viewport.Height = WinApp::kClientHeight_;
-	viewport.TopLeftX = 0;
-	viewport.TopLeftY = 0;
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
-
-	// シザー矩形
-	D3D12_RECT scissorRect{};
-	// 基本的にビューポートと同じ矩形が構成されるようにする
-	scissorRect.left = 0;
-	scissorRect.right = WinApp::kClientWidth_;
-	scissorRect.top = 0;
-	scissorRect.bottom = WinApp::kClientHeight_;
-
 
 	// Transform変数を作る
 	Transform transform{
@@ -895,12 +506,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	const uint32_t descriptorSizeDSV =
 		device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
-
 	// SRVを作成するDescriptorHeapの場所を決める
 	D3D12_CPU_DESCRIPTOR_HANDLE textureSrvHandleCPU2 = dxCommon->GetSRVCPUDescriptorHandle(2);
 	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU2 = dxCommon->GetSRVGPUDescriptorHandle(2);
 	bool texture = true;
-
 
 	MSG msg{};
 	// ウィンドウの×ボタンが押されるまでループ
@@ -963,7 +572,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
 
 		dxCommon->PostDraw();
-
 	}
 
 	// こういうもんである。初期化と逆順に行う
@@ -1022,7 +630,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//device->Release();
 
-	// リソースリークチェック
+	// //リソースリークチェック
 	//IDXGIDebug1 *debug;
 	//if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug)))) {
 	//	debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);

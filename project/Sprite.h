@@ -96,10 +96,10 @@ private:
 	const int32_t kClientWidth_ = 1280;
 	const int32_t kClientheight_ = 720;
 
-	ID3D12GraphicsCommandList *commandList_;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_;
 
 	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU_;
-	ID3D12DescriptorHeap *srvHeap_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvHeap_ = nullptr;
 	uint32_t srvDescriptorSize_ = 0;
 
 	Vector2 position_ = { 0.0f,0.0f };

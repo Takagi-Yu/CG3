@@ -57,7 +57,7 @@ void TextureManager::LoadTexture(const std::string &filePath) {
 	textureData.srvHandleCPU_ = dxCommonPtr_->GetSRVCPUDescriptorHandle(srvIndex);
 	textureData.srvHandleGPU_ = dxCommonPtr_->GetSRVGPUDescriptorHandle(srvIndex);
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-	// CG2参考の1559行目付近を参考に続きを書く
+	
 	srvDesc.Format = textureData.metadata_.format;
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D; // 2Dテクスチャ

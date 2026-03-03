@@ -12,7 +12,7 @@ void SpriteCommon::Initialize(DirectXCommon *dxCommon)
 {
 	mDxCommonptr_ = dxCommon;
 
-	ID3D12Device *device_ = mDxCommonptr_->GetDevice();
+	device_ = mDxCommonptr_->GetDevice();
 
 	std::filesystem::create_directory("logs");
 

@@ -25,5 +25,4 @@ private:
 
   BYTE key_[256] = {};
   BYTE keyPre_[256] = {};
-
 };
