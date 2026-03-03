@@ -75,7 +75,9 @@ void Sprite::Initialize(SpriteCommon *spriteCommon, DirectXCommon *dxCommon, std
     transformationMatrixData_->WVP = MakeIdentity4x4();
     transformationMatrixData_->World = MakeIdentity4x4();
 
-    TextureIndex_ = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
+    textureIndex_ = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
+
+    AdjustTextureSize();
 }
 
 void Sprite::Update() {
@@ -123,21 +125,42 @@ void Sprite::Update() {
     //    color.x -= 1.0f;
     //}
     //SetColor(color);
+
+    float left = 0.0f - anchorPoint_.x;
+    float right = 1.0f - anchorPoint_.x;
+    float top = 0.0f - anchorPoint_.y;
+    float bottom = 1.0f - anchorPoint_.y;
     
-    vertexData_[0].position = { 0.0f, 1.0f, 0.0f, 1.0f };
-    vertexData_[0].texcoord = { 0.0f, 1.0f };
+    if (isFlipX_) {
+        left = -left;
+        right = -right;
+    }
+
+    if (isFlipY_) {
+        top = -top;
+        bottom = -bottom;
+    }
+
+    const DirectX::TexMetadata &metadata = TextureManager::GetInstance()->GetMetaData(textureIndex_);
+    float tex_left = textureLeftTop_.x / metadata.width;
+    float tex_right = (textureLeftTop_.x + textureSize_.x) / metadata.width;
+    float tex_top = textureLeftTop_.y / metadata.height;
+    float tex_bottom = (textureLeftTop_.y + textureSize_.y) / metadata.height;
+
+    vertexData_[0].position = { left, bottom, 0.0f, 1.0f };
+    vertexData_[0].texcoord = { tex_left, tex_bottom };
     vertexData_[0].normal = { 0.0f, 0.0f, -1.0f };
 
-    vertexData_[1].position = { 0.0f, 0.0f, 0.0f, 1.0f };
-    vertexData_[1].texcoord = { 0.0f, 0.0f };
+    vertexData_[1].position = { left, top, 0.0f, 1.0f };
+    vertexData_[1].texcoord = { tex_left, tex_top };
     vertexData_[1].normal = { 0.0f, 0.0f, -1.0f };
 
-    vertexData_[2].position = { 1.0f, 1.0f, 0.0f, 1.0f };
-    vertexData_[2].texcoord = { 1.0f, 1.0f };
+    vertexData_[2].position = { right, bottom, 0.0f, 1.0f };
+    vertexData_[2].texcoord = { tex_right, tex_bottom };
     vertexData_[2].normal = { 0.0f, 0.0f, -1.0f };
 
-    vertexData_[3].position = { 1.0f, 0.0f, 0.0f, 1.0f };
-    vertexData_[3].texcoord = { 1.0f, 0.0f };
+    vertexData_[3].position = { right, top, 0.0f, 1.0f };
+    vertexData_[3].texcoord = { tex_right, tex_top };
     vertexData_[3].normal = { 0.0f, 0.0f, -1.0f };
 
     transformSprite.scale = { size_.x, size_.y, 1.0f };
@@ -170,7 +193,16 @@ void Sprite::Draw()
     // TransformationMatrix
     commandList_->SetGraphicsRootConstantBufferView(1, transformationMatrixResource_->GetGPUVirtualAddress());
     // Texture
-    commandList_->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(TextureIndex_));
+    commandList_->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(textureIndex_));
     // DrawCall
     commandList_->DrawIndexedInstanced(6, 1, 0, 0, 0);
+}
+
+void Sprite::AdjustTextureSize()
+{
+    const DirectX::TexMetadata &metadata = TextureManager::GetInstance()->GetMetaData(textureIndex_);
+
+    textureSize_.x = static_cast<float>(metadata.width);
+    textureSize_.y = static_cast<float>(metadata.height);
+    size_ = textureSize_;
 }

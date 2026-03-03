@@ -44,7 +44,7 @@ public:
 
 public:
 	void SetUseTexture(const std::string &filePath);
-	void SetUseTexture(uint32_t textureIndex) { TextureIndex_ = textureIndex; }
+	void SetUseTexture(uint32_t textureIndex) { textureIndex_ = textureIndex; }
 	void SetSRVHandleGPU(D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU) { textureSrvHandleGPU_ = textureSrvHandleGPU; }
 	
 	const Vector2 &GetPosition()const { return position_; }
@@ -55,6 +55,20 @@ public:
 	void SetColor(const Vector4 &color) { materialData_->color = color; }
 	const Vector2 &GetSize()const { return size_; }
 	void SetSize(const Vector2 &size) { size_ = size; }
+	const Vector2 &GetAnchorPoint()const { return anchorPoint_; }
+	void SetAnchorPoint(const Vector2 &anchorPoint) { anchorPoint_ = anchorPoint; }
+	const bool &GetIsFlipX()const { return isFlipX_; }
+	void SetIsFlipX(const bool &isFlipX) { isFlipX_ = isFlipX; }
+	const bool &GetIsFlipY()const { return isFlipY_; }
+	void SetIsFlipY(const bool &isFlipY) { isFlipY_ = isFlipY; }
+
+	const Vector2 &GetTextureLeftTop()const { return textureLeftTop_; }
+	void SetTextureLeftTop(const Vector2 &textureLeftTop) { textureLeftTop_ = textureLeftTop; }
+	const Vector2 &GetTextureSize()const { return textureSize_; }
+	void SetTextureSize(const Vector2 &textureSize) { textureSize_ = textureSize; }
+
+private:
+	void AdjustTextureSize();
 
 private:
 	DirectXCommon *dxCommon_ = nullptr;
@@ -74,7 +88,7 @@ private:
 	Material *materialData_ = nullptr;
 	TransformationMatrix *transformationMatrixData_ = nullptr;
 
-	uint32_t TextureIndex_ = 0;
+	uint32_t textureIndex_ = 0;
 
 	Transform transform_{};
 	Transform uvTransform_{};
@@ -92,5 +106,12 @@ private:
 	float rotation_ = 0.0f;
 	Vector2 size_ = { 180.0f,180.0f };
 
+	Vector2 anchorPoint_ = { 0.5f,0.5f };
+
+	bool isFlipX_ = false;
+	bool isFlipY_ = false;
+
+	Vector2 textureLeftTop_ = { 0.0f,0.0f };
+	Vector2 textureSize_ = { 100.0f,100.0f };
 };
 

@@ -99,6 +99,14 @@ D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetSrvHandleGPU(uint32_t textureInde
 	return textureData.srvHandleGPU_;
 }
 
+const DirectX::TexMetadata &TextureManager::GetMetaData(uint32_t textureIndex)
+{
+	assert(textureIndex < textureDatas_.size());
+
+	TextureData &textureData = textureDatas_[textureIndex];
+	return textureData.metadata_;
+}
+
 void TextureManager::Filalize(){
 	delete instance_;
 	instance_ = nullptr;
