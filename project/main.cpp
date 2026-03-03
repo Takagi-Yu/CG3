@@ -15,16 +15,16 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd,
 	LPARAM lParam);
 #include "externals/DirectXTex/d3dx12.h"
 
-#include "Input.h"
-#include "WinApp.h"
-#include "DirectXCommon.h"
-#include "Logger.h"
-#include "StringUtility.h"
-#include "SpriteCommon.h"
-#include "Sprite.h"
-#include "MyMath.h"
-#include "TextureManager.h"
-#include "D3DResourceLeakChecker.h"
+#include "engine/io/input.h"
+#include "engine/base/WinApp.h"
+#include "engine/base/DirectXCommon.h"
+#include "engine/base/Logger.h"
+#include "engine/base/StringUtility.h"
+#include "engine/2d/SpriteCommon.h"
+#include "engine/2d/Sprite.h"
+#include "engine/base/MyMath.h"
+#include "engine/base/TextureManager.h"
+#include "engine/base/D3DResourceLeakChecker.h"
 
 using namespace StringUtility;
 using namespace Logger;
