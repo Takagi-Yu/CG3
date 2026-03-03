@@ -46,7 +46,7 @@ void DirectXCommon::DeviceInitialize(
 
 #ifdef _DEBUG
 
-	ID3D12Debug1 *debugController = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Debug1> debugController = nullptr;
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)))) {
 		// デバッグレイヤーを有効化する
 		debugController->EnableDebugLayer();
@@ -62,7 +62,7 @@ void DirectXCommon::DeviceInitialize(
 	// どうにもできない場合が多いのでassertにしておく
 	assert(SUCCEEDED(hr));
 
-	IDXGIAdapter4 *useAdapter = nullptr;
+	Microsoft::WRL::ComPtr<IDXGIAdapter4> useAdapter = nullptr;
 	// 良い順にアダプタを頼む
 	for (UINT i = 0; dxgiFactory_->EnumAdapterByGpuPreference(
 		i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
@@ -94,7 +94,7 @@ void DirectXCommon::DeviceInitialize(
 
 	for (size_t i = 0; i < _countof(featureLevels); ++i) {
 		hr = D3D12CreateDevice(
-			useAdapter,
+			useAdapter.Get(),
 			featureLevels[i],
 			IID_PPV_ARGS(device_.ReleaseAndGetAddressOf())
 		);
@@ -114,7 +114,7 @@ void DirectXCommon::DeviceInitialize(
 
 #ifdef _DEBUG
 
-	ID3D12InfoQueue *infoQueue = nullptr;	
+	Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue = nullptr;
 	if (SUCCEEDED(device_->QueryInterface(IID_PPV_ARGS(&infoQueue)))) {
 
 		infoQueue->SetBreakOnSeverity(
@@ -139,7 +139,6 @@ void DirectXCommon::DeviceInitialize(
 		filter.DenyList.pSeverityList = severities;
 
 		infoQueue->PushStorageFilter(&filter);
-		infoQueue->Release();
 	}
 #endif
 }
@@ -188,8 +187,8 @@ void DirectXCommon::CreateSwapchain()
 		DXGI_SWAP_EFFECT_FLIP_DISCARD; // モニタにうつしたら、中身を破棄
 	// コマンドキュー、ウィンドウハンドル、設定を渡して生成する
 	hr = dxgiFactory_->CreateSwapChainForHwnd(
-		commandQueue_, winApp_->GetHwnd(), &swapChainDesc, nullptr, nullptr,
-		reinterpret_cast<IDXGISwapChain1**>(&swapChain_));
+		commandQueue_.Get(), winApp_->GetHwnd(), &swapChainDesc, nullptr, nullptr,
+		reinterpret_cast<IDXGISwapChain1**>(swapChain_.GetAddressOf()));
 	assert(SUCCEEDED(hr));
 }
 
@@ -357,7 +356,7 @@ void DirectXCommon::DXCcompilerInitialize()
 	hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&dxcCompiler_));
 	assert(SUCCEEDED(hr));
 
-	hr = dxcUtils_->CreateDefaultIncludeHandler(&includeHandler_);
+	hr = dxcUtils_.Get()->CreateDefaultIncludeHandler(&includeHandler_);
 	assert(SUCCEEDED(hr));
 }
 
@@ -373,7 +372,7 @@ void DirectXCommon::ImGuiInitialize()
 	swapChain_->GetDesc1(&swapChainDesc);
 
 	ImGui_ImplDX12_Init(
-		device_.Get(),                         // ID3D12Device*
+		device_.Get(),                         // ID3D12Device
 		swapChainDesc.BufferCount,             // バックバッファ数
 		DXGI_FORMAT_R8G8B8A8_UNORM,             // RTVフォーマット（元 rtvDesc.Format）
 		srvHeap_.Get(),                              // SRV DescriptorHeap
@@ -530,7 +529,7 @@ void DirectXCommon::CommandReset()
 
 Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible)
 {
-	ID3D12DescriptorHeap* descriptorHeap = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap = nullptr;
 	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
 	descriptorHeapDesc.Type = heapType;
 	descriptorHeapDesc.NumDescriptors = numDescriptors;
@@ -567,7 +566,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> DirectXCommon::CompileShader(const std::wstring
 		ConvertString(std::format(L"Begin CompileShader, path:{}, profile:{}\n",
 			filePath, profile)));
 	// hlslファイルを読む
-	IDxcBlobEncoding *shaderSource = nullptr;
+	Microsoft::WRL::ComPtr<IDxcBlobEncoding> shaderSource = nullptr;
 	HRESULT hr = dxcUtils_->LoadFile(filePath.c_str(), nullptr, &shaderSource);
 	// 読めなかったら止める
 	assert(SUCCEEDED(hr));
@@ -589,14 +588,14 @@ Microsoft::WRL::ComPtr<IDxcBlob> DirectXCommon::CompileShader(const std::wstring
 		L"-Zpr",          // メモリレイアウトは行優先
 	};
 	// 実際にShaderをコンパイルする
-	IDxcResult *shaderResult = nullptr;
+	Microsoft::WRL::ComPtr<IDxcResult> shaderResult = nullptr;
 	hr = dxcCompiler_->Compile(&shaderSourceBuffer, arguments, _countof(arguments),
-		includeHandler_, IID_PPV_ARGS(&shaderResult));
+		includeHandler_.Get(), IID_PPV_ARGS(&shaderResult));
 	// コンパイラエラーではなくdxcが起動できないなど致命的な状況
 	assert(SUCCEEDED(hr));
 
 	// 警告・エラーが出てたらログに出して止める
-	IDxcBlobUtf8 *shaderError = nullptr;
+	Microsoft::WRL::ComPtr<IDxcBlobUtf8> shaderError = nullptr;
 	shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
 	if (shaderError != nullptr && shaderError->GetStringLength() != 0) {
 		Log(os, shaderError->GetStringPointer());
@@ -604,7 +603,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> DirectXCommon::CompileShader(const std::wstring
 		assert(false);
 	}
 	// コンパイル結果から実行用のバイナリ部分を取得
-	IDxcBlob *shaderBlob = nullptr;
+	Microsoft::WRL::ComPtr<IDxcBlob> shaderBlob = nullptr;
 	hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob),
 		nullptr);
 	assert(SUCCEEDED(hr));
@@ -637,7 +636,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateBufferResource(size_
 	// バッファの場合はこれにする決まり
 	vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-	ID3D12Resource *vertexResource = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource = nullptr;
 	HRESULT hr = device_->CreateCommittedResource(
 		&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
@@ -663,9 +662,8 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateTextureResource(cons
 	D3D12_HEAP_PROPERTIES heapProperties{};
 	heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT; // 細かい設定を行う
 
-
 	// Resourceの生成
-	ID3D12Resource *resource = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource = nullptr;
 	HRESULT hr = device_->CreateCommittedResource(
 		&heapProperties, // Heapの設定
 		D3D12_HEAP_FLAG_NONE, // Heapの特殊な設定

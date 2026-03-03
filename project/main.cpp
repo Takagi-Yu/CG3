@@ -24,6 +24,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd,
 #include "Sprite.h"
 #include "MyMath.h"
 #include "TextureManager.h"
+#include "D3DResourceLeakChecker.h"
 
 using namespace StringUtility;
 using namespace Logger;
@@ -186,13 +187,12 @@ ModelData LoadObjFile(const std::string &directoryPath, const std::string &filen
 }
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+	D3DResourceLeakChecker leakCheck;
+
 	CoInitializeEx(0, COINIT_MULTITHREADED);
 	// 誰も捕捉しなかった場合に(Unhedled),補足する関数を登録
 	// main関数始まってすぐに登録すると良い
 	SetUnhandledExceptionFilter(ExportDump);
-
-	/*uint32_t *p = nullptr;
-	 *p = 100;*/
 
 	std::filesystem::create_directory("logs");
 
@@ -217,8 +217,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	dxCommon = new DirectXCommon();
 	dxCommon->Initialize(winApp);
 
-	ID3D12GraphicsCommandList *commandList = dxCommon->GetCommandList();
-	ID3D12Device *device = dxCommon->GetDevice();
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList = dxCommon->GetCommandList();
+	Microsoft::WRL::ComPtr<ID3D12Device> device = dxCommon->GetDevice();
 
 	TextureManager::GetInstance()->Initialize(dxCommon);
 
@@ -257,7 +257,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	materialData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	materialData->enableLighting = true;
 	materialData->uvTransform = MakeIdentity4x4();
-
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource =
 		dxCommon->CreateBufferResource(sizeof(DirectionalLight));
@@ -303,7 +302,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	std::memcpy(modelVertexData, modelData.vertices.data(), sizeof(VertexData) * modelData.vertices.size()); // 頂点リソースにコピー
 
 #pragma endregion
-
 
 #pragma region Sphere
 	//// 頂点リソースにデータを書き込む
@@ -543,7 +541,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//// ImGuiの内部コマンドを生成する
 		ImGui::Render();
 
-
 		dxCommon->PreDraw();
 
 		spriteCommon->PreDraw();
@@ -569,7 +566,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 
 		// 実際のcommandListのImGuiの描画コマンドを積む
-		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
+		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList.Get());
 
 		dxCommon->PostDraw();
 	}
@@ -583,68 +580,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Log(logStream, ConvertString(std::format(L"clientSize:{},{}\n", WinApp::kClientWidth_,
 		WinApp::kClientHeight_)));
 
-	winApp->Finalize();
-	TextureManager::GetInstance()->Filalize();
 
-	//fence->Release();
-	//rtvDescriptorHeap->Release();
-	//swapChainResources[0]->Release();
-	//swapChainResources[1]->Release();
-	//swapChain->Release();
-	//commandList->Release();
-	//commandAllocator->Release();
-	//commandQueue->Release();
-
-	//useAdapter->Release();
-	//dxgiFactory->Release();
-
-	//srvDescriptorHeap->Release();
-	//dxcUtils->Release();
-	//dxcCompiler->Release();
-	//includeHandler->Release();
-	//sphereVertexResource->Release();
-	//modelVertexResource->Release();
-	//graphicsPipelineState->Release();
-	//signatureBlob->Release();
-	//if (errorBlob) {
-	//	errorBlob->Release();
-	//}
-	//rootSignature->Release();
-	//pixelShaderBlob->Release();
-	//vertexShaderBlob->Release();
-	//materialResource->Release();
-	//materialResourceSprite->Release();
-	//directionalLightResource->Release();
-	//wvpResource->Release();
-	//textureResource->Release();
-	//textureResource2->Release();
-	//intermediateResource->Release();
-	//intermediateResource2->Release();
-	//depthStencilResource->Release();
-	//dsvDescriptorHeap->Release();
-	//vertexResourceSprite->Release();
-	//indexResourceSprite->Release();
-	//transformationMatrixResourceSprite->Release();
-	//sphereIndexResource->Release();
-
-
-	//device->Release();
-
-	// //リソースリークチェック
-	//IDXGIDebug1 *debug;
-	//if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug)))) {
-	//	debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
-	//	debug->ReportLiveObjects(DXGI_DEBUG_APP, DXGI_DEBUG_RLO_ALL);
-	//	debug->ReportLiveObjects(DXGI_DEBUG_D3D12, DXGI_DEBUG_RLO_ALL);
-	//	debug->Release();
-	//}
-
-	delete winApp;
-	delete dxCommon;
-	delete spriteCommon;
 	for (uint32_t i = 0; i < 5; ++i) {
 		delete sprites[i];
 	}
+	delete spriteCommon;
+	TextureManager::GetInstance()->Filalize();
+	delete dxCommon;
 
+	winApp->Finalize();
+	delete winApp;
 	return 0;
 }
