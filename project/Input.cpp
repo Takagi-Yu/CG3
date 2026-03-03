@@ -38,7 +38,6 @@ bool Input::PushKey(BYTE keyNumber) {
   if (key_[keyNumber]) {
       return true;
   }
-
     return false; 
 }
 

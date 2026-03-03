@@ -44,7 +44,7 @@ public: // メンバ関数
 	Microsoft::WRL::ComPtr<ID3D12Resource>CreateBufferResource(size_t sizeInBytes);
 	Microsoft::WRL::ComPtr<ID3D12Resource>CreateTextureResource(const DirectX::TexMetadata &metadata);
 
-	void UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource> &texture, const DirectX::ScratchImage &mipImages);
+	Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource> &texture, const DirectX::ScratchImage &mipImages);
 	static DirectX::ScratchImage LoadTexture(const std::string &filePath);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetSRVCPUDescriptorHandle(uint32_t index);
@@ -54,7 +54,7 @@ public: // メンバ関数
 	ID3D12Device *GetDevice()const { return device_.Get(); }
 	ID3D12GraphicsCommandList *GetCommandList()const { return commandList_.Get(); }
 	
-	//std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, 2> *swapChainResources_;
+	static const uint32_t kMaxSRVCount;
 
 private: // メンバ変数
 	WinApp* winApp_ = nullptr;
@@ -63,36 +63,36 @@ private: // メンバ変数
 
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory_;
 
-	ID3D12CommandAllocator* commandAllocator_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_;
-	ID3D12CommandQueue* commandQueue_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue_ = nullptr;
 
-	IDXGISwapChain4* swapChain_ = nullptr;
+	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain_ = nullptr;
 
 	int32_t width_ = 1280;
 	int32_t height_ = 720;
 
-	ID3D12Resource* depthStencilResource_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilResource_ = nullptr;
 
-	ID3D12DescriptorHeap* rtvHeap_ = nullptr;
-	ID3D12DescriptorHeap* dsvHeap_ = nullptr;
-	ID3D12DescriptorHeap* srvHeap_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvHeap_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvHeap_ = nullptr;
 
 	uint32_t rtvDescriptorSize_ = 0;
 	uint32_t dsvDescriptorSize_ = 0;
 	uint32_t srvDescriptorSize_ = 0;
 
-	ID3D12Resource* swapChainResources_[2];
+	Microsoft::WRL::ComPtr<ID3D12Resource> swapChainResources_[2];
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles_[2];
 
 	D3D12_VIEWPORT viewport_{};
 	D3D12_RECT scissorRect_{};
 
-	IDxcUtils *dxcUtils_ = nullptr;
-	IDxcCompiler3 *dxcCompiler_ = nullptr;
-	IDxcIncludeHandler *includeHandler_ = nullptr;
+	Microsoft::WRL::ComPtr<IDxcUtils> dxcUtils_ = nullptr;
+	Microsoft::WRL::ComPtr<IDxcCompiler3> dxcCompiler_ = nullptr;
+	Microsoft::WRL::ComPtr<IDxcIncludeHandler> includeHandler_ = nullptr;
 
-	ID3D12Fence *fence_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Fence> fence_ = nullptr;
 	UINT64 fenceVal_ = 0;
 	HANDLE fenceEvent_ = {};
 
