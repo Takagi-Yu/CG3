@@ -75,7 +75,7 @@ void Sprite::Initialize(SpriteCommon *spriteCommon, DirectXCommon *dxCommon, std
     transformationMatrixData_->WVP = MakeIdentity4x4();
     transformationMatrixData_->World = MakeIdentity4x4();
 
-    useTextureIndex_ = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
+    TextureIndex_ = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
 }
 
 void Sprite::Update() {
@@ -170,7 +170,7 @@ void Sprite::Draw()
     // TransformationMatrix
     commandList_->SetGraphicsRootConstantBufferView(1, transformationMatrixResource_->GetGPUVirtualAddress());
     // Texture
-    commandList_->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(useTextureIndex_));
+    commandList_->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(TextureIndex_));
     // DrawCall
     commandList_->DrawIndexedInstanced(6, 1, 0, 0, 0);
 }

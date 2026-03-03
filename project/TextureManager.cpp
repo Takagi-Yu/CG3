@@ -16,12 +16,16 @@ TextureManager *TextureManager::GetInstance() {
 }
 
 void TextureManager::Initialize(DirectXCommon *dxCommon) {
+	dxCommonPtr_ = dxCommon;
+
 	textureDatas_.reserve(DirectXCommon::kMaxSRVCount);
 }
 
 void TextureManager::LoadTexture(const std::string &filePath) {
 	auto it = std::find_if(textureDatas_.begin(), textureDatas_.end(), [&](TextureData &textureData)
-		{return textureData.filePath_ == filePath; });
+		{return textureData.filePath_ == filePath; }
+	);
+
 	if (it != textureDatas_.end()) {
 		return;
 	}
@@ -42,7 +46,7 @@ void TextureManager::LoadTexture(const std::string &filePath) {
 		0, mipImage);
 	assert(SUCCEEDED(hr));
 
-	textureDatas_.reserve(textureDatas_.size() + 1);
+	textureDatas_.resize(textureDatas_.size() + 1);
 	TextureData &textureData = textureDatas_.back();
 	textureData.filePath_ = filePath;
 	textureData.metadata_ = mipImage.GetMetadata();
@@ -60,10 +64,11 @@ void TextureManager::LoadTexture(const std::string &filePath) {
 	srvDesc.Texture2D.MipLevels = UINT(textureData.metadata_.mipLevels);
 
 	device_ = dxCommonPtr_->GetDevice();
-	commandList_ = dxCommonPtr_->GetCommandList();
 	device_->CreateShaderResourceView(textureData.resource_.Get(), &srvDesc, textureData.srvHandleCPU_);
 	
-	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = dxCommonPtr_->UploadTextureData(textureData.resource_, mipImage);
+	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = 
+		dxCommonPtr_->UploadTextureData(textureData.resource_, mipImage);
+
 	dxCommonPtr_->ExecuteCommandList();
 	dxCommonPtr_->WaitForSignal();
 	dxCommonPtr_->CommandReset();
@@ -74,11 +79,13 @@ void TextureManager::LoadTexture(const std::string &filePath) {
 uint32_t TextureManager::GetTextureIndexByFilePath(const std::string &filePath)
 {
 	auto it = std::find_if(textureDatas_.begin(), textureDatas_.end(), [&](TextureData &textureData)
-		{return textureData.filePath_ == filePath; });
+		{return textureData.filePath_ == filePath; }
+	);
 
 	if (it != textureDatas_.end()) {
 		uint32_t textureIndex = 
 			static_cast<uint32_t>(std::distance(textureDatas_.begin(), it));
+		return textureIndex;
 	}
 	assert(0);
 	return 0;
@@ -86,7 +93,7 @@ uint32_t TextureManager::GetTextureIndexByFilePath(const std::string &filePath)
 
 D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetSrvHandleGPU(uint32_t textureIndex)
 {
-	assert(textureIndex);
+	assert(textureIndex < textureDatas_.size());
 
 	TextureData &textureData = textureDatas_[textureIndex];
 	return textureData.srvHandleGPU_;

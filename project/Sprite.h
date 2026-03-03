@@ -44,7 +44,7 @@ public:
 
 public:
 	void SetUseTexture(const std::string &filePath);
-	void SetUseTexture(uint32_t textureIndex) { useTextureIndex_ = textureIndex; }
+	void SetUseTexture(uint32_t textureIndex) { TextureIndex_ = textureIndex; }
 	void SetSRVHandleGPU(D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU) { textureSrvHandleGPU_ = textureSrvHandleGPU; }
 	
 	const Vector2 &GetPosition()const { return position_; }
@@ -74,7 +74,7 @@ private:
 	Material *materialData_ = nullptr;
 	TransformationMatrix *transformationMatrixData_ = nullptr;
 
-	uint32_t useTextureIndex_ = 0;
+	uint32_t TextureIndex_ = 0;
 
 	Transform transform_{};
 	Transform uvTransform_{};

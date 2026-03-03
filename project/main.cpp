@@ -855,6 +855,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ID3D12GraphicsCommandList *commandList = dxCommon->GetCommandList();
 	ID3D12Device *device = dxCommon->GetDevice();
 
+	//TextureManager *textureManager = nullptr;
+	TextureManager::GetInstance()->Initialize(dxCommon);
+
+	TextureManager::GetInstance()->LoadTexture("Resources/uvChecker.png");
+	TextureManager::GetInstance()->LoadTexture("Resources/monsterBall.png");
+
 	SpriteCommon *spriteCommon = nullptr;
 	spriteCommon = new SpriteCommon;
 	spriteCommon->Initialize(dxCommon);
@@ -866,7 +872,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	std::vector<Sprite*>sprites;
 	for (uint32_t i = 0; i < 5; ++i) {
 		Sprite *sprite = new Sprite();
-		sprite->Initialize(spriteCommon, dxCommon, logFilePath);
+		if (i % 2) {
+            sprite->Initialize(spriteCommon, dxCommon, "Resources/monsterBall.png");
+		} else {
+			sprite->Initialize(spriteCommon, dxCommon, "Resources/uvChecker.png");
+		}
 
 		Vector2 position[5];
 		position[i] = { i * 200.0f, 0.0f };
@@ -874,9 +884,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		sprites.push_back(sprite);
 	}
-
-	TextureManager *textureManager = nullptr;
-	textureManager->Initialize(dxCommon);
 
 	//HRESULT hr;
 
@@ -1876,7 +1883,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//CloseHandle(fenceEvent);
 
 	winApp->Finalize();
-	textureManager->Filalize();
+	TextureManager::GetInstance()->Filalize();
 
 	//fence->Release();
 	//rtvDescriptorHeap->Release();
