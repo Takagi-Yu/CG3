@@ -110,15 +110,15 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)..\generated\outputs\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)..\$generated\obj\$CG2_0_0\$(configuration)\</IntDir>
+    <IntDir>$(SolutionDir)..\generated\obj\$CG2_0_0\$(configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
     <OutDir>$(SolutionDir)..\generated\outputs\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)..\$generated\obj\$CG2_0_0\$(configuration)\</IntDir>
+    <IntDir>$(SolutionDir)..\generated\obj\$CG2_0_0\$(configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)..\generated\outputs\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)..\$generated\obj\$CG2_0_0\$(configuration)\</IntDir>
+    <IntDir>$(SolutionDir)..\generated\obj\$CG2_0_0\$(configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
