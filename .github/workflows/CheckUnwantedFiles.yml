@@ -1,12 +1,12 @@
 # リポジトリ内の不要なファイルを見つけるためのGitHub Actions
 name: CheckUnwantedFiles
 
-on:
+on: 
   # GitHubのActionsタブから手動で実行できるようにする
-  workflow_dispatch
+  workflow_dispatch:
   push:
     branches:
-      - master
+     - master
 
 # 検出する不要なファイルのパターンを定義する。
 # プロジェクトのニーズに合わせて、これらのリストを変更してください。
