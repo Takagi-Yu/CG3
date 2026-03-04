@@ -525,7 +525,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// ゲームの処理
 
 		for (uint32_t i = 0; i < 5; ++i) {
-			sprites[i]->SetColor(Vector4(1, 0, 0, 1));
+			//sprites[i]->SetColor(Vector4(1, 0, 0, 1));
 			//sprites[i]->SetRotation(0.77f);
 			sprites[i]->Update();
 		}
